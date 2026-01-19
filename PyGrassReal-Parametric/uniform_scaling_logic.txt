@@ -1,0 +1,30 @@
+            // === WORLD-SPACE PROJECTION APPROACH (UNIFORM SCALING) ===
+            // 1. Calculate world-space delta (how far we've dragged in 3D)
+            const worldDelta = new THREE.Vector3().subVectors(intersection, sclState.cornerStartPoint);
+            
+            // 2. Transform to object's local space
+            const localDelta = worldDelta.clone().applyQuaternion(objectQuaternion.clone().invert());
+            
+            // 3. Get corner's initial position in local space (diagonal vector)
+            const localCornerStart = new THREE.Vector3()
+              .subVectors(sclState.cornerStartPoint, sclState.initialPosition)
+              .applyQuaternion(sclState.initialQuaternion.clone().invert());
+            
+            // 4. Calculate initial distance from center
+            const initialDist = localCornerStart.length();
+            
+            // 5. Project drag onto corner direction (diagonal)
+            const cornerDir = localCornerStart.clone().normalize();
+            let projDist = localDelta.dot(cornerDir);
+            
+            // Apply sensitivity
+            const sensitivity = 0.5;
+            projDist *= sensitivity;
+            
+            // 6. Calculate uniform scaling ratio
+            const ratio = (initialDist + projDist) / initialDist;
+            
+            // 7. Apply uniform scale (maintains aspect ratio)
+            const newScale = sclState.initialScale.clone().multiplyScalar(Math.max(0.1, ratio));
+
+            targetRef.current.scale.copy(newScale);
