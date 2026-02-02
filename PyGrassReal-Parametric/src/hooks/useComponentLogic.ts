@@ -1,22 +1,21 @@
 import { useCallback } from 'react';
 import type { NodeData, Connection } from '../types/NodeTypes';
 import type { ComponentData } from '../types/ComponentTypes';
+import { useNodeGraph } from '../context/NodeGraphContext';
 
 interface UseComponentLogicProps {
-    nodes: NodeData[];
-    setNodes: React.Dispatch<React.SetStateAction<NodeData[]>>;
-    connections: Connection[];
-    setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
     componentLibraryRef: React.MutableRefObject<Map<string, ComponentData>>;
 }
 
 export const useComponentLogic = ({
-    nodes,
-    setNodes,
-    connections,
-    setConnections,
     componentLibraryRef
 }: UseComponentLogicProps) => {
+    const {
+        nodes,
+        connections,
+        setNodesWithHistory,
+        setConnectionsWithHistory
+    } = useNodeGraph();
 
     const convertGroupToComponent = useCallback((groupId: string) => {
         const group = nodes.find((node) => node.id === groupId && node.type === 'group');
@@ -44,7 +43,7 @@ export const useComponentLogic = ({
         let outputIndex = 1;
         const componentId = `component-${Date.now()}`;
 
-        const inputNodes = childNodes.filter((node) => node.type === 'input' || node.type === 'number-slider');
+        const inputNodes = childNodes.filter((node) => node.type === 'input' || node.type === 'number-slider' || node.type === 'series');
         const outputNodes = childNodes.filter((node) => node.type === 'output');
         const inputNodePortMap = new Map<string, { id: string; label: string }>();
         const outputNodePortMap = new Map<string, { id: string; label: string }>();
@@ -64,7 +63,7 @@ export const useComponentLogic = ({
 
         inputNodes.forEach((node, index) => {
             const outputs = node.data.outputs?.length ? node.data.outputs : [{ id: `output-${index + 1}`, label: '' }];
-            outputs.forEach((portDef, portIndex) => {
+            outputs.forEach((portDef, _portIndex) => {
                 const label = portDef.label || node.data.customName || `Input ${inputIndex}`;
                 const port = { id: `in-${inputIndex}`, label };
                 inputIndex += 1;
@@ -76,7 +75,7 @@ export const useComponentLogic = ({
 
         outputNodes.forEach((node, index) => {
             const inputs = node.data.inputs?.length ? node.data.inputs : [{ id: `input-${index + 1}`, label: '' }];
-            inputs.forEach((portDef, portIndex) => {
+            inputs.forEach((portDef, _portIndex) => {
                 const label = portDef.label || node.data.customName || `Output ${outputIndex}`;
                 const port = { id: `out-${outputIndex}`, label };
                 outputIndex += 1;
@@ -176,14 +175,14 @@ export const useComponentLogic = ({
 
         componentLibraryRef.current.set(componentId, componentData);
 
-        setNodes((prev) => prev.filter((node) => !childIds.has(node.id) && node.id !== groupId).concat(componentNode));
-        setConnections((prev) => {
+        setNodesWithHistory((prev) => prev.filter((node) => !childIds.has(node.id) && node.id !== groupId).concat(componentNode));
+        setConnectionsWithHistory((prev) => {
             const preserved = prev.filter(
                 (conn) => !childIds.has(conn.sourceNodeId) && !childIds.has(conn.targetNodeId)
             );
             return preserved.concat(newConnections);
         });
-    }, [nodes, connections, setNodes, setConnections, componentLibraryRef]);
+    }, [nodes, connections, setNodesWithHistory, setConnectionsWithHistory, componentLibraryRef]);
 
     const handleComponentCluster = useCallback((componentNodeId: string) => {
         const componentNode = nodes.find((node) => node.id === componentNodeId && node.type === 'component');
@@ -297,12 +296,12 @@ export const useComponentLogic = ({
             },
         };
 
-        setNodes((prev) => {
+        setNodesWithHistory((prev) => {
             const filtered = prev.filter((node) => node.id !== componentNodeId);
             return [groupNode, ...restoredNodes, ...filtered];
         });
-        setConnections([...preservedConnections, ...restoredConnections, ...reboundConnections]);
-    }, [nodes, connections, setNodes, setConnections, componentLibraryRef]);
+        setConnectionsWithHistory([...preservedConnections, ...restoredConnections, ...reboundConnections]);
+    }, [nodes, connections, setNodesWithHistory, setConnectionsWithHistory, componentLibraryRef]);
 
     return {
         convertGroupToComponent,

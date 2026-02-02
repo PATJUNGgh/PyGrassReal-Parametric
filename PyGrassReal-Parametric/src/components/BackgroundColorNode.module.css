@@ -1,0 +1,200 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 20px 20px 20px;
+  box-sizing: border-box;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.toggleRow:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.checkboxWrapper input {
+  accent-color: #38bdf8;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.controlsStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.gradientRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.colorWrapper {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-sizing: border-box;
+}
+
+.colorWrapper:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.colorPreview {
+  width: 100%;
+  height: 100%;
+}
+
+.colorInput {
+  position: absolute;
+  inset: -10px;
+  width: 200%;
+  height: 200%;
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.hexInput {
+  width: 100px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 0;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s;
+  text-align: center;
+  letter-spacing: 0.5px;
+  box-sizing: border-box;
+}
+
+.hexInput:focus {
+  border-color: #38bdf8;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.sliderGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 80%;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+
+.angleSlider {
+  width: 100%;
+  accent-color: #38bdf8;
+  height: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.angleSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.angleLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.angleValue {
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview {
+  width: 100%;
+  max-width: 100%;
+  height: 60px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  margin-top: 8px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.preview::after {
+  content: 'PREVIEW RESULT';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 3px;
+  pointer-events: none;
+}

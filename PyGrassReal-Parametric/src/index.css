@@ -97,19 +97,50 @@ button:focus-visible {
   color: white;
 }
 
+.popIn {
+  animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
+
 @keyframes popIn {
   0% {
+    transform: scale(0);
     opacity: 0;
-    transform: scale(0.5);
   }
 
   70% {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    opacity: 1;
   }
 
   100% {
-    opacity: 1;
     transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(-3px, 3px);
+  }
+
+  50% {
+    transform: translate(3px, -3px);
+  }
+
+  75% {
+    transform: translate(-3px, 3px);
+  }
+
+  100% {
+    transform: translate(0, 0);
   }
 }
 
@@ -135,4 +166,14 @@ button:focus-visible {
     opacity: 0;
     transform: translate(var(--flame-x), -150px) scale(0.3);
   }
+}
+
+/* Ensure nodes capture pointer events even if the canvas overlay is ignoring them */
+.custom-node-base,
+.group-node-base,
+.node-port,
+.primitive-node-base,
+.inspector-node-base,
+.widget-window-node-base {
+  pointer-events: auto !important;
 }

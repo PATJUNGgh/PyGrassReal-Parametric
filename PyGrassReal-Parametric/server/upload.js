@@ -15,10 +15,12 @@ const uploadDir = path.join(projectRoot, 'public', 'handle-images');
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (req, file, cb) => {
+    console.log('Destination:', { body: req.body, file });
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
+    console.log('Filename:', { body: req.body, file });
     const axis = String(req.body.axis || '').toLowerCase();
     const safeAxis = axis === 'x' || axis === 'y' || axis === 'z' ? axis : 'x';
     const ext = path.extname(file.originalname) || '.png';
@@ -39,10 +41,13 @@ app.use((_req, res, next) => {
 });
 
 app.post('/upload-handle', upload.single('file'), (req, res) => {
+  console.log('--- /upload-handle route hit ---');
   if (!req.file) {
+    console.log('No file received');
     return res.status(400).json({ error: 'No file uploaded.' });
   }
 
+  console.log('File received:', req.file);
   const filename = req.file.filename;
   res.json({ url: `/handle-images/${filename}` });
 });

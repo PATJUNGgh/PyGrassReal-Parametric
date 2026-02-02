@@ -1,0 +1,14 @@
+@keyframes pop-in {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.node-search-box {
+    animation: pop-in 0.15s ease-out;
+}

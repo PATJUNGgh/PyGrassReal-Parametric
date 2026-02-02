@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Connection } from '../types/NodeTypes';
+import type { Connection, NodeData } from '../types/NodeTypes';
+import { isInputPort } from '../utils/nodeUtils';
+import { useNodeGraph } from '../context/NodeGraphContext';
 
 interface UseConnectionLogicProps {
-    canvasRef: React.RefObject<HTMLDivElement>;
-    connections: Connection[];
-    setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
+    canvasRef: React.RefObject<HTMLDivElement | null>;
     offset: { x: number; y: number };
     scale: number;
     getPortPosition: (nodeId: string, portId: string) => { x: number; y: number } | null;
@@ -14,14 +14,20 @@ interface UseConnectionLogicProps {
 
 export const useConnectionLogic = ({
     canvasRef,
-    connections,
-    setConnections,
     offset,
+    // @ts-ignore
     scale,
     getPortPosition,
     setLightningEffects,
-    setShakingNodes
+    setShakingNodes,
 }: UseConnectionLogicProps) => {
+    const {
+        nodes,
+        connections,
+        setNodesWithHistory,
+        setConnectionsWithHistory
+    } = useNodeGraph();
+
     const [draggingConnection, setDraggingConnection] = useState<{
         sourceNodeId: string;
         sourcePort: string;
@@ -67,7 +73,7 @@ export const useConnectionLogic = ({
             }
         };
 
-        const handleWindowMouseUp = (e: MouseEvent) => {
+        const handleWindowMouseUp = (_e: MouseEvent) => {
             // Cancel connection if dropped on nothing
             setDraggingConnection(null);
         };
@@ -82,7 +88,7 @@ export const useConnectionLogic = ({
     }, [draggingConnection?.sourceNodeId, draggingConnection?.sourcePort, canvasRef]);
 
     // Function strictly for cleaning up or manual updates if needed
-    const updateConnectionDrag = useCallback((e: React.MouseEvent) => {
+    const updateConnectionDrag = useCallback((_e: React.MouseEvent) => {
         // No-op: handled by useEffect
     }, []);
 
@@ -90,8 +96,8 @@ export const useConnectionLogic = ({
     const completeConnection = useCallback((targetNodeId: string, targetPort: string) => {
         if (draggingConnection) {
             // Prevent connecting Input to Input or Output to Output
-            const sourceIsInput = draggingConnection.sourcePort.toLowerCase().includes('input');
-            const targetIsInput = targetPort.toLowerCase().includes('input');
+            const sourceIsInput = isInputPort(nodes, draggingConnection.sourceNodeId, draggingConnection.sourcePort);
+            const targetIsInput = isInputPort(nodes, targetNodeId, targetPort);
             if (sourceIsInput === targetIsInput) {
                 setDraggingConnection(null);
                 return;
@@ -129,8 +135,31 @@ export const useConnectionLogic = ({
                 sourcePort: finalSourcePort,
                 targetPort: finalTargetPort,
             };
-            setConnections((prev) => [...prev, newConnection]);
+            setConnectionsWithHistory((prev) => [...prev, newConnection]);
             setDraggingConnection(null);
+
+            // Auto-add input port for layers-to-widget node
+            const targetNode = nodes.find(n => n.id === finalTargetId);
+            if (targetNode && targetNode.type === 'layer-bridge') {
+                setNodesWithHistory((prevNodes) => prevNodes.map(node => {
+                    if (node.id === finalTargetId) {
+                        const currentInputs = node.data.inputs || [];
+                        const inputCount = currentInputs.length + 1;
+                        const newInput = {
+                            id: `input-layers-${Date.now()}`,
+                            label: `Layers ${inputCount}`
+                        };
+                        return {
+                            ...node,
+                            data: {
+                                ...node.data,
+                                inputs: [...currentInputs, newInput]
+                            }
+                        };
+                    }
+                    return node;
+                }));
+            }
 
             // Trigger Lightning Effect
             const sourcePos = getPortPosition(draggingConnection.sourceNodeId, draggingConnection.sourcePort);
@@ -150,23 +179,14 @@ export const useConnectionLogic = ({
                 }, 500);
             }
 
-            // Trigger Shake Effect
-            setShakingNodes((prev) => new Set(prev).add(draggingConnection.sourceNodeId).add(targetNodeId));
-            setTimeout(() => {
-                setShakingNodes((prev) => {
-                    const next = new Set(prev);
-                    next.delete(draggingConnection.sourceNodeId);
-                    next.delete(targetNodeId);
-                    return next;
-                });
-            }, 300);
+
         }
-    }, [draggingConnection, getPortPosition, connections, setConnections, setLightningEffects, setShakingNodes]);
+    }, [draggingConnection, getPortPosition, nodes, connections, setConnectionsWithHistory, setNodesWithHistory, setLightningEffects, setShakingNodes]);
 
     // Delete connection
     const deleteConnection = useCallback((connectionId: string) => {
-        setConnections((prev) => prev.filter((conn) => conn.id !== connectionId));
-    }, [setConnections]);
+        setConnectionsWithHistory((prev) => prev.filter((conn) => conn.id !== connectionId));
+    }, [setConnectionsWithHistory]);
 
     // Cancel connection
     const cancelConnection = useCallback(() => {

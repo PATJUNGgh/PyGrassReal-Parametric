@@ -1,0 +1,451 @@
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    70% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(0, 0);
+    }
+
+    25% {
+        transform: translate(-3px, 3px);
+    }
+
+    50% {
+        transform: translate(3px, -3px);
+    }
+
+    75% {
+        transform: translate(-3px, 3px);
+    }
+
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
+@keyframes modalPopIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.5);
+    }
+
+    70% {
+        transform: translateX(-50%) scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+.node-port {
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.node-port:hover {
+    transform: scale(1.2) !important;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+    z-index: 101;
+}
+
+/* Base Node Styles for WidgetWindowNode */
+.widget-window-node-base {
+    position: absolute;
+    border-radius: 16px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    transition: all 0.2s ease-out; /* Add transition for general property changes */
+}
+
+.widget-window-node-selected {
+    z-index: 100;
+}
+
+.widget-window-node-unselected {
+    z-index: 1;
+}
+
+.widget-window-node-grabbing {
+    cursor: grabbing;
+}
+
+.widget-window-node-grab {
+    cursor: grab;
+}
+
+.widget-window-node-paused {
+    background: linear-gradient(165deg, rgba(120, 120, 120, 0.6) 0%, rgba(180, 180, 180, 0.5) 100%);
+    border: 1px solid rgba(200, 200, 200, 0.5);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(200, 200, 200, 0.2);
+    backdrop-filter: blur(20px) saturate(50%);
+    -webkit-backdrop-filter: blur(20px) saturate(50%);
+    opacity: 0.7;
+}
+
+.widget-window-node-paused.widget-window-node-selected {
+    border: 3px solid #9ca3af;
+    box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.2), 0 0 30px 5px rgba(156, 163, 175, 0.1), 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(156, 163, 175, 0.1);
+}
+
+.widget-window-node-normal {
+    background: linear-gradient(165deg, rgba(14, 165, 233, 0.6) 0%, rgba(255, 255, 255, 0.5) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    opacity: 1;
+}
+
+.widget-window-node-normal.widget-window-node-selected {
+    border: 3px solid #38bdf8;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 0 30px 5px rgba(56, 189, 248, 0.1), 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(56, 189, 248, 0.1);
+}
+
+.widget-window-node-shake {
+    animation: shake 0.3s ease-in-out;
+}
+
+.widget-window-node-popin {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Header Styles */
+.widget-window-node-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border-radius: 14px 14px 0 0;
+}
+
+.widget-window-node-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.widget-window-node-icon {
+    font-size: 18px;
+}
+
+.widget-window-node-name-input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.widget-window-node-name-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: text;
+}
+
+.widget-window-node-header-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.widget-window-node-menu-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.widget-window-node-menu-button:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.widget-window-node-menu-popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}
+
+.widget-window-node-menu-popup {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(165deg, rgba(14, 165, 233, 0.85) 0%, rgba(255, 255, 255, 0.6) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    padding: 4px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    z-index: 1000;
+    animation: modalPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.widget-window-node-menu-item {
+    border-radius: 6px;
+    padding: 4px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.widget-window-node-menu-item-hover:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    transform: scale(1.1);
+}
+
+.widget-window-node-menu-item-duplicate {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.widget-window-node-menu-item-stop {
+    background: rgba(239, 68, 68, 0.3);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.widget-window-node-menu-item-resume {
+    background: rgba(34, 197, 94, 0.3);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.widget-window-node-menu-item-info {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.widget-window-node-join-group-btn {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 0px;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.widget-window-node-join-group-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.6);
+    background: linear-gradient(135deg, #60f090 0%, #4ade80 100%);
+}
+
+.widget-window-node-leave-group-btn {
+    background: rgba(255, 165, 0, 0.3);
+    border: 1px solid rgba(255, 165, 0, 0.6);
+    padding: 4px;
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.widget-window-node-delete-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+/* Port Styles */
+.widget-window-node-port-container-input,
+.widget-window-node-port-container-output {
+    position: absolute;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.widget-window-node-port-container-input {
+    left: -16px;
+}
+
+.widget-window-node-port-container-output {
+    right: -12px;
+}
+
+.widget-window-node-port-item-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    position: relative;
+    pointer-events: auto;
+    flex-shrink: 0;
+}
+
+.widget-window-node-port-disconnect-btn {
+    position: absolute;
+    cursor: pointer;
+    color: #000000;
+    background: #22c55e; /* Green for input disconnect */
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.widget-window-node-port-disconnect-btn-input {
+    left: -28px;
+}
+
+.widget-window-node-port-disconnect-btn-output {
+    background: #ef4444; /* Red for output disconnect */
+    left: 27px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.widget-window-node-port-input {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #22c55e; /* Green for Input */
+    border: 2px solid #ffffff;
+    cursor: crosshair;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+.widget-window-node-port-output {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ef4444; /* Red for Output */
+    border: 2px solid #ffffff;
+    cursor: crosshair;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    position: relative;
+}
+
+/* 3D Viewport Placeholder Styles */
+.widget-window-node-viewport-container {
+    flex: 1;
+    padding: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.widget-window-node-viewport-mock {
+    flex: 1;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    alignItems: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+
+.widget-window-node-grid-lines {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    transform: perspective(500px) rotateX(60deg) translateY(-50px) translateZ(-100px);
+    pointer-events: none;
+}
+
+.widget-window-node-cube-icon {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #38bdf8;
+    transform: rotate(45deg);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    z-index: 2;
+}
+
+.widget-window-node-viewport-controls {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+}
+
+.widget-window-node-control-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+}
+
+.widget-window-node-output-port-area-padding {
+    height: 6px;
+}

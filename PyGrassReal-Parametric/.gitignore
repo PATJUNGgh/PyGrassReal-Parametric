@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local notes / tools
+.continue/
+plan.md
+plan2.md
+GEMINI.md

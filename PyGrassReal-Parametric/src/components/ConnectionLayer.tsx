@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Connection, NodeData } from '../types/NodeTypes';
+import { isInputPort } from '../utils/nodeUtils';
 
 interface ConnectionLayerProps {
     connections: Connection[];
@@ -13,6 +14,7 @@ interface ConnectionLayerProps {
     scale: number;
     offset: { x: number; y: number };
     children?: React.ReactNode;
+    onDeleteConnection: (id: string) => void;
 }
 
 export const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
@@ -24,11 +26,9 @@ export const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
     interactionMode,
     setSelectedConnectionIds,
     draggingConnection,
-    children
+    children,
+    onDeleteConnection
 }) => {
-
-    // Helper to check port type
-    const isInputPortId = (id: string) => id.includes('input');
 
     return (
         <svg
@@ -57,11 +57,15 @@ export const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
                 const controlOffset = Math.max(Math.abs(dx) * 0.5, 50);
 
                 // Determine control points based on port type (Input vs Output)
-                const sourceIsInput = isInputPortId(conn.sourcePort);
-                const targetIsInput = isInputPortId(conn.targetPort);
+                const sourceIsInput = isInputPort(nodes, conn.sourceNodeId, conn.sourcePort);
+                const targetIsInput = isInputPort(nodes, conn.targetNodeId, conn.targetPort);
 
                 const cp1x = sourceIsInput ? startX - controlOffset : startX + controlOffset;
                 const cp2x = targetIsInput ? endX - controlOffset : endX + controlOffset;
+
+                // Bezier Midpoint Calculation (t = 0.5)
+                const midX = 0.125 * startX + 0.375 * cp1x + 0.375 * cp2x + 0.125 * endX;
+                const midY = 0.125 * startY + 0.375 * startY + 0.375 * endY + 0.125 * endY;
 
                 // Check if this connection is part of an infected network
                 const isSourceInfected = infectedNodeIds.has(conn.sourceNodeId);
@@ -123,6 +127,46 @@ export const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
                                 pointerEvents: 'none', // Clicks handled by transparent path
                             }}
                         />
+
+                        {/* Delete Button (X) - Only in Wire Mode */}
+                        {interactionMode === 'wire' && (
+                            <foreignObject
+                                x={midX - 8}
+                                y={midY - 8}
+                                width={16}
+                                height={16}
+                                style={{ pointerEvents: 'auto', overflow: 'visible' }}
+                            >
+                                <div
+                                    title="Delete Connection"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteConnection(conn.id);
+                                    }}
+                                    style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        background: '#ff4444',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                                        border: '1.5px solid white',
+                                        transform: 'scale(1)',
+                                        transition: 'transform 0.1s',
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </div>
+                            </foreignObject>
+                        )}
                     </g>
                 );
             })}
@@ -141,7 +185,7 @@ export const ConnectionLayer: React.FC<ConnectionLayerProps> = ({
                 const dx = draggingX - sourcePos.x;
                 const controlOffset = Math.max(Math.abs(dx) * 0.5, 50);
 
-                const isInput = isInputPortId(draggingConnection.sourcePort);
+                const isInput = isInputPort(nodes, draggingConnection.sourceNodeId, draggingConnection.sourcePort);
                 const startX = sourcePos.x;
                 const startY = sourcePos.y;
 

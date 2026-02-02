@@ -1,4 +1,96 @@
 import React from 'react';
+import { Undo2, Redo2 } from 'lucide-react';
+import { NODE_DEFINITIONS } from '../../definitions/nodeDefinitions';
+import type { NodeData } from '../../types/NodeTypes';
+import type { ActiveDragData } from './DragOverlay'; // Import ActiveDragData
+import './UIToolbar.css';
+
+const NODE_EDITOR_NODES: NodeData['type'][] = [
+    'box', 'sphere', 'vector-xyz', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material', 'text-on-mesh', 'mesh-array', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider', 'series', 'panel'
+];
+
+const WIDGET_EDITOR_NODES: NodeData['type'][] = [
+    'widget-window', 'background-color', 'viewport', 'layer-source', 'layer-bridge', 'layer-view', 'antivirus', 'custom', 'input', 'output', 'number-slider', 'panel'
+];
+
+interface NodeGridProps {
+    nodeTypes: NodeData['type'][];
+    setActiveDragNode: (node: ActiveDragData | null) => void;
+    activeDragNode: ActiveDragData | null;
+}
+
+const NodeGrid: React.FC<NodeGridProps> = ({ nodeTypes, setActiveDragNode, activeDragNode }) => {
+    const startPosRef = React.useRef<{ x: number, y: number } | null>(null);
+    const dragTypeRef = React.useRef<NodeData['type'] | null>(null);
+
+    const handlePointerDown = (e: React.PointerEvent, type: NodeData['type']) => {
+        // Only left click
+        if (e.button !== 0) return;
+
+        // Prevent default browser dragging
+        e.preventDefault();
+
+        const target = e.currentTarget as HTMLElement;
+        const pointerId = e.pointerId;
+
+        // Release capture so the window/canvas/DragOverlay can pick up the tracking immediately
+        try {
+            if (target.hasPointerCapture(pointerId)) {
+                target.releasePointerCapture(pointerId);
+            }
+        } catch (err) {
+            // Ignore
+        }
+
+        // Activates drag immediately (hover works -> click works)
+        setActiveDragNode({
+            type,
+            x: e.clientX,
+            y: e.clientY
+        });
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        // No-op: Drag is handled by DragOverlay once active
+    };
+
+    const handlePointerUpOrLeave = () => {
+        // No-op
+    };
+
+    return (
+        <div className="ui-node-row">
+            {nodeTypes.map(nodeType => {
+                const node = NODE_DEFINITIONS[nodeType];
+                if (!node) return null;
+
+                const isActive = activeDragNode?.type === node.type;
+
+                return (
+                    <div
+                        key={node.type}
+                        onPointerDown={(e) => handlePointerDown(e, node.type)}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUpOrLeave}
+                        onPointerLeave={handlePointerUpOrLeave}
+                        className={`ui-node-card ${isActive ? 'is-dragging-source' : ''}`}
+                        style={{
+                            ['--node-accent' as string]: node.color[0],
+                            cursor: 'grab',
+                            // Prevent default browser drag
+                            touchAction: 'none',
+                        }}
+                        title={node.label}
+                        data-label={node.label}
+                        aria-label={node.label}
+                    >
+                        <span className="ui-node-icon">{node.icon}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 interface UIToolbarProps {
     showNodeEditor: boolean;
@@ -7,13 +99,15 @@ interface UIToolbarProps {
     setShowWidgetEditor: (show: boolean) => void;
     interactionMode: '3d' | 'node' | 'wire';
     setInteractionMode: (mode: '3d' | 'node' | 'wire') => void;
-    snapEnabled: boolean;
-    setSnapEnabled: (snap: boolean) => void;
     setHandleTextureTarget: (target: 'x' | 'y' | 'z') => void;
     handleImageButtonClick: () => void;
-    setIsDraggingNode: (isDragging: boolean) => void;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    setActiveDragNode: (node: ActiveDragData | null) => void;
+    activeDragNode: ActiveDragData | null;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onZoomToFit: () => void;
+    onUndo?: () => void;
+    onRedo?: () => void;
 }
 
 export const UIToolbar: React.FC<UIToolbarProps> = ({
@@ -23,267 +117,185 @@ export const UIToolbar: React.FC<UIToolbarProps> = ({
     setShowWidgetEditor,
     interactionMode,
     setInteractionMode,
-    snapEnabled,
-    setSnapEnabled,
     setHandleTextureTarget,
     handleImageButtonClick,
-    setIsDraggingNode,
+    setActiveDragNode,
+    activeDragNode,
     fileInputRef,
     handleImageChange,
+    onZoomToFit,
+    onUndo,
+    onRedo
 }) => {
     return (
-        <div style={{
-            position: 'absolute',
-            top: 20,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 20,
-            display: 'flex',
-            gap: 6,
-            background: 'rgba(20, 20, 20, 0.8)',
-            padding: '10px 25px', // Increased padding to frame items better
-            borderRadius: 16,
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-            alignItems: 'center',
-            userSelect: 'none',
-        }}>
-            {/* Snap Toggle */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginRight: 8,
-                opacity: 0.8,
-            }}>
-                <input
-                    type="checkbox"
-                    checked={snapEnabled}
-                    onChange={(e) => setSnapEnabled(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                />
-                <span style={{ fontSize: 12, color: 'white', fontWeight: 500 }}>Snap</span>
+        <div
+            className="ui-toolbar"
+            onPointerDown={(e) => e.stopPropagation()}
+        >
+            <div className="ui-toolbar__group">
+                {!showWidgetEditor && (
+                    <button
+                        onClick={() => {
+                            const next = !showNodeEditor;
+                            setShowNodeEditor(next);
+                            if (!next) {
+                                setInteractionMode('3d');
+                            }
+                        }}
+                        title="Toggle Node Editor"
+                        className={`ui-btn ui-toggle-btn ${showNodeEditor ? 'is-active' : ''}`}
+                    >
+                        <span className="ui-btn__icon">ND</span>
+                        <span className="ui-btn__label">Nodes {showNodeEditor && 'ON'}</span>
+                    </button>
+                )}
+
+                {!showNodeEditor && (
+                    <button
+                        onClick={() => {
+                            const next = !showWidgetEditor;
+                            setShowWidgetEditor(next);
+                            if (!next) {
+                                setInteractionMode('3d');
+                            }
+                        }}
+                        title="Toggle Widget Editor"
+                        className={`ui-btn ui-toggle-btn ${showWidgetEditor ? 'is-active' : ''}`}
+                    >
+                        <span className="ui-btn__icon">WG</span>
+                        <span className="ui-btn__label">Widget {showWidgetEditor && 'ON'}</span>
+                    </button>
+                )}
             </div>
 
-            {/* Divider */}
-            <div style={{
-                width: 1,
-                height: 24,
-                background: 'rgba(255, 255, 255, 0.1)',
-            }} />
-
-            {/* Node Editor Toggle */}
-            {!showWidgetEditor && (
-                <button
-                    onClick={() => setShowNodeEditor(!showNodeEditor)}
-                    title="Toggle Node Editor"
-                    style={{
-                        padding: '6px 10px',
-                        background: showNodeEditor
-                            ? 'linear-gradient(135deg, #646cff, #535bf2)'
-                            : 'rgba(255, 255, 255, 0.1)',
-                        border: 'none',
-                        borderRadius: 8,
-                        color: '#fff',
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexDirection: 'column',
-                        gap: 2,
-                        boxShadow: showNodeEditor ? '0 4px 12px rgba(100, 108, 255, 0.3)' : 'none',
-                        minWidth: 42,
-                    }}
-                >
-                    <span style={{ fontSize: 14 }}>📐</span>
-                    <span style={{ fontSize: 9 }}>Nodes {showNodeEditor && '✓'}</span>
-                </button>
-            )}
-
-            {/* Widget Editor Toggle */}
-            {!showNodeEditor && (
-                <button
-                    onClick={() => setShowWidgetEditor(!showWidgetEditor)}
-                    title="Toggle Widget Editor"
-                    style={{
-                        padding: '6px 10px',
-                        background: showWidgetEditor
-                            ? 'linear-gradient(135deg, #10b981, #059669)'
-                            : 'rgba(255, 255, 255, 0.1)',
-                        border: 'none',
-                        borderRadius: 8,
-                        color: '#fff',
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexDirection: 'column',
-                        gap: 2,
-                        boxShadow: showWidgetEditor ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
-                        minWidth: 42,
-                    }}
-                >
-                    <span style={{ fontSize: 14 }}>🧩</span>
-                    <span style={{ fontSize: 9 }}>Widget {showWidgetEditor && '✓'}</span>
-                </button>
-            )}
-
-            {/* --- 3D Mode Controls --- */}
             {!showNodeEditor && !showWidgetEditor && (
                 <>
-                    <div style={{ width: 1, height: 24, background: 'rgba(255, 255, 255, 0.1)' }} />
-                    <button onClick={() => { setHandleTextureTarget('x'); handleImageButtonClick(); }} title="Apply image to X" style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #ff3333, #cc0000)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(255, 51, 51, 0.3)' }}>🔴 Image X</button>
-                    <button onClick={() => { setHandleTextureTarget('y'); handleImageButtonClick(); }} title="Apply image to Y" style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #33ff33, #00cc00)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(51, 255, 51, 0.3)' }}>🟢 Image Y</button>
-                    <button onClick={() => { setHandleTextureTarget('z'); handleImageButtonClick(); }} title="Apply image to Z" style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #3388ff, #0066cc)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(51, 136, 255, 0.3)' }}>🔵 Image Z</button>
+                    <div className="ui-divider" />
+                    <div className="ui-toolbar__group">
+                        <button
+                            onClick={() => { setHandleTextureTarget('x'); handleImageButtonClick(); }}
+                            title="Apply image to X"
+                            className="ui-btn ui-axis-btn"
+                        >
+                            Image X
+                        </button>
+                        <button
+                            onClick={() => { setHandleTextureTarget('y'); handleImageButtonClick(); }}
+                            title="Apply image to Y"
+                            className="ui-btn ui-axis-btn"
+                        >
+                            Image Y
+                        </button>
+                        <button
+                            onClick={() => { setHandleTextureTarget('z'); handleImageButtonClick(); }}
+                            title="Apply image to Z"
+                            className="ui-btn ui-axis-btn"
+                        >
+                            Image Z
+                        </button>
+                    </div>
                 </>
             )}
 
-            {/* --- Node Mode Controls --- */}
             {(showNodeEditor || showWidgetEditor) && (
                 <>
-                    {/* 3D Mode Button */}
-                    <button
-                        onClick={() => setInteractionMode('3d')}
-                        title="3D Interaction Mode"
-                        style={{
-                            padding: '6px 10px',
-                            background: interactionMode === '3d'
-                                ? 'linear-gradient(135deg, #4ecdc4, #44a8a0)' // Active Teal/Cyan
-                                : 'rgba(255, 255, 255, 0.1)',
-                            border: 'none',
-                            borderRadius: 8,
-                            color: '#fff',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            flexDirection: 'column',
-                            gap: 2,
-                            boxShadow: interactionMode === '3d' ? '0 4px 12px rgba(78, 205, 196, 0.3)' : 'none',
-                            minWidth: 42,
-                        }}
-                    >
-                        <span style={{ fontSize: 14 }}>🎮</span>
-                        <span style={{ fontSize: 9 }}>3D Mode</span>
-                    </button>
+                    <div className="ui-divider" />
+                    <div className="ui-toolbar__group">
+                        <button
+                            onClick={() => setInteractionMode('3d')}
+                            title="3D Interaction Mode"
+                            className={`ui-btn ui-mode-btn ${interactionMode === '3d' ? 'is-active' : ''}`}
+                        >
+                            <span className="ui-btn__icon">3D</span>
+                            <span className="ui-btn__label">3D Mode</span>
+                        </button>
 
-                    {/* Node Mode Button */}
-                    <button
-                        onClick={() => setInteractionMode('node')}
-                        title="Node Interaction Mode"
-                        style={{
-                            padding: '6px 10px',
-                            background: interactionMode === 'node'
-                                ? 'linear-gradient(135deg, #ff5252, #f44336)' // Active Red
-                                : 'rgba(255, 255, 255, 0.1)',
-                            border: 'none',
-                            borderRadius: 8,
-                            color: '#fff',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            flexDirection: 'column',
-                            gap: 2,
-                            boxShadow: interactionMode === 'node' ? '0 4px 12px rgba(255, 82, 82, 0.3)' : 'none',
-                            minWidth: 42,
-                        }}
-                    >
-                        <span style={{ fontSize: 14 }}>🔧</span>
-                        <span style={{ fontSize: 9 }}>Node Mode</span>
-                    </button>
+                        <button
+                            onClick={() => setInteractionMode('node')}
+                            title="Node Interaction Mode"
+                            className={`ui-btn ui-mode-btn ${interactionMode === 'node' ? 'is-active' : ''}`}
+                        >
+                            <span className="ui-btn__icon">ND</span>
+                            <span className="ui-btn__label">Node Mode</span>
+                        </button>
 
-                    {/* Wire Mode Button */}
-                    <button
-                        onClick={() => setInteractionMode(interactionMode === 'wire' ? 'node' : 'wire')}
-                        title="Wire Selection Mode"
-                        style={{
-                            padding: '6px 10px',
-                            background: interactionMode === 'wire'
-                                ? 'linear-gradient(135deg, #fbbf24, #d97706)' // Active Amber/Yellow
-                                : 'rgba(255, 255, 255, 0.1)',
-                            border: 'none',
-                            borderRadius: 8,
-                            color: '#fff',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            flexDirection: 'column',
-                            gap: 2,
-                            boxShadow: interactionMode === 'wire' ? '0 4px 12px rgba(251, 191, 36, 0.3)' : 'none',
-                            minWidth: 42,
-                        }}
-                    >
-                        <span style={{ fontSize: 14 }}>🔗</span>
-                        <span style={{ fontSize: 9 }}>Wire Mode</span>
-                    </button>
+                        <button
+                            onClick={() => setInteractionMode('wire')}
+                            title="Wire Selection Mode"
+                            className={`ui-btn ui-mode-btn ${interactionMode === 'wire' ? 'is-active' : ''}`}
+                        >
+                            <span className="ui-btn__icon">WR</span>
+                            <span className="ui-btn__label">Wire Mode</span>
+                        </button>
 
-                    <div style={{ width: 1, height: 24, background: 'rgba(255, 255, 255, 0.1)' }} />
+                    </div>
 
-                    {/* Node Grid (2 Rows x 3 Columns) - Only show for Nodes, not Widget */}
-                    {showNodeEditor && (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)', // Updated to 4 columns for better balance (4 top, 3 bottom)
-                            gap: 4,
-                            alignItems: 'center',
-                        }}>
-                            {[
-                                { type: 'box', label: 'Box Node', icon: '📦', color: ['#646cff', '#535bf2'], shadow: '100, 108, 255' },
-                                { type: 'sphere', label: 'Sphere Node', icon: '⚪', color: ['#2196f3', '#1976d2'], shadow: '33, 150, 243' },
-                                { type: 'custom', label: 'Custom', icon: '⚙️', color: ['#8b5cf6', '#7c3aed'], shadow: '139, 92, 246' },
-                                { type: 'antivirus', label: 'AntiVirus', icon: '🛡️', color: ['#dc2626', '#fca5a5'], shadow: '220, 38, 38' },
-                                { type: 'input', label: 'Input', icon: '📥', color: ['#22c55e', '#16a34a'], shadow: '34, 197, 94' },
-                                { type: 'output', label: 'Output', icon: '📤', color: ['#ef4444', '#dc2626'], shadow: '239, 68, 68' },
-                                { type: 'number-slider', label: 'Number Slider', icon: 'NS', color: ['#0ea5e9', '#0284c7'], shadow: '14, 165, 233' },
-                                { type: 'panel', label: 'Panel', icon: '👁️', color: ['#eab308', '#ca8a04'], shadow: '234, 179, 8' },
-                            ].map(node => (
-                                <div
-                                    key={node.type}
-                                    draggable
-                                    onDragStart={(e) => {
-                                        e.dataTransfer.setData('nodeType', node.type);
-                                        e.dataTransfer.effectAllowed = 'copy';
-                                        setIsDraggingNode(true);
+                    <div className="ui-divider" />
+
+                    <div className="ui-toolbar__group">
+                        <button
+                            onClick={onZoomToFit}
+                            title="Zoom to Fit"
+                            className="ui-btn ui-mode-btn"
+                        >
+                            <span className="ui-btn__icon">FT</span>
+                            <span className="ui-btn__label">Fit</span>
+                        </button>
+                    </div>
+                    {(onUndo || onRedo) && (
+                        <div className="ui-toolbar__group ui-toolbar__group--undo">
+                            <div className="ui-toolbar__section ui-history-group">
+                                <button
+                                    onPointerDown={(e) => {
+                                        e.stopPropagation();
+                                        onUndo?.();
                                     }}
-                                    onDragEnd={() => setIsDraggingNode(false)}
-                                    style={{
-                                        padding: '3px 6px', // Reduced padding to fit better
-                                        borderRadius: 6,
-                                        background: `linear-gradient(135deg, ${node.color[0]}, ${node.color[1]})`,
-                                        color: 'white',
-                                        cursor: 'grab',
-                                        fontWeight: 600,
-                                        fontSize: 10,
-                                        userSelect: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        flexDirection: 'column',
-                                        gap: 1,
-                                        boxShadow: `0 2px 8px rgba(${node.shadow}, 0.3)`,
-                                        minWidth: 38,
-                                        textAlign: 'center',
-                                        width: '100%',
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    disabled={!onUndo}
+                                    title="Undo"
+                                    className="ui-btn ui-icon-btn"
                                 >
-                                    <span style={{ fontSize: 12 }}>{node.icon}</span>
-                                    <span style={{ fontSize: 8, whiteSpace: 'nowrap' }}>{node.label}</span>
-                                </div>
-                            ))}
+                                    <Undo2 size={22} />
+                                </button>
+                                <button
+                                    onPointerDown={(e) => {
+                                        e.stopPropagation();
+                                        onRedo?.();
+                                    }}
+                                    disabled={!onRedo}
+                                    title="Redo"
+                                    className="ui-btn ui-icon-btn"
+                                >
+                                    <Redo2 size={22} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="ui-divider" />
+
+                    {showNodeEditor && (
+                        <div className="ui-grid-panel">
+                            <NodeGrid
+                                nodeTypes={NODE_EDITOR_NODES}
+                                setActiveDragNode={setActiveDragNode}
+                                activeDragNode={activeDragNode}
+                            />
+                        </div>
+                    )}
+
+                    {showWidgetEditor && (
+                        <div className="ui-grid-panel">
+                            <NodeGrid
+                                nodeTypes={WIDGET_EDITOR_NODES}
+                                setActiveDragNode={setActiveDragNode}
+                                activeDragNode={activeDragNode}
+                            />
                         </div>
                     )}
 
                 </>
-            )}
+            )
+            }
 
             <input
                 ref={fileInputRef}

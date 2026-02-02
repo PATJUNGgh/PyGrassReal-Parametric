@@ -1,21 +1,166 @@
 import { useRef, useCallback } from 'react';
 import type { NodeData } from '../types/NodeTypes';
+import { useNodeGraph } from '../context/NodeGraphContext';
+
+// --- Shared sizing constants ---
+const PORT_STICKOUT = 32;
+const EXTRA_BOTTOM = 8;
+const VIEWPORT_EXTRA_BOTTOM = 10;
+const WIDGET_WINDOW_HEIGHT_OFFSET = 0;
+const BACKGROUND_BASE_EXTRA_HEIGHT = 20;
+const BACKGROUND_GRADIENT_EXTRA_HEIGHT = 20;
+const LAYER_SOURCE_EXTRA_BOTTOM = 0;
+
+// Type definition for node sizing logic
+type NodeSizing = {
+    width: number | ((node: NodeData) => number);
+    height: number | ((node: NodeData) => number);
+    extraLeft?: number;
+    extraRight?: number;
+};
+
+// Configuration for fallback node sizes. Aliases can be used for node types that share sizing logic.
+const nodeSizeFallbacks: Record<string, NodeSizing | string> = {
+    panel: { width: 340, height: 300 },
+    series: { width: 260, height: 170, extraLeft: 57, extraRight: 32 },
+    'layer-source': {
+        width: 300,
+        height: (node) => {
+            const inputCount = node.data?.inputs?.length ?? 0;
+            const inputRowsHeight = inputCount > 0 ? inputCount * 28 : 28;
+            return 85 + inputRowsHeight + LAYER_SOURCE_EXTRA_BOTTOM;
+        },
+    },
+    'layer-view': { width: 300, height: 50 },
+    'number-slider': { width: 300, height: 160 },
+    custom: {
+        width: (node) => {
+            const nameLen = (node.data?.customName || 'Custom Node').length;
+            return Math.min(620, Math.max(320, nameLen * 8 + 180));
+        },
+        height: (node) => {
+            const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
+            return maxPorts > 0 ? 140 + maxPorts * 40 : 180;
+        },
+    },
+    antivirus: 'custom',
+    input: 'custom',
+    output: 'custom',
+};
+
+
+const getNodeBoundingBox = (node: NodeData) => {
+    const isSeries = node.type === 'series';
+    const isViewport = node.type === 'viewport';
+    const isWidgetWindow = node.type === 'widget-window';
+    const isBackground = node.type === 'background-color';
+    const isBackgroundGradient = isBackground && node.data?.backgroundMode === 'gradient';
+    const isLayerSource = node.type === 'layer-source';
+    const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
+    const hasPorts = maxPorts > 0;
+
+    // Even when we have measured DOM width/height, ports stick out past the node
+    // box. If we ignore this, groups can render "above" nodes that visually extend
+    // beyond the measured bounds (as seen in the bug report).
+    let extraLeft = 0;
+    let extraRight = 0;
+    let extraHeight = 0;
+
+    if (hasPorts && !isSeries) {
+        extraLeft += PORT_STICKOUT;
+        extraRight += PORT_STICKOUT;
+        extraHeight += EXTRA_BOTTOM;
+    }
+    if (isViewport) {
+        extraHeight += VIEWPORT_EXTRA_BOTTOM;
+    }
+    if (isBackground) {
+        extraHeight += BACKGROUND_BASE_EXTRA_HEIGHT;
+    }
+    if (isBackgroundGradient) {
+        extraHeight += BACKGROUND_GRADIENT_EXTRA_HEIGHT;
+    }
+
+    // Prioritize real dimensions if they have been reported by the component,
+    // but expand them to include known visual stickouts.
+    if (node.data?.width && node.data?.height && node.data.width > 1 && node.data.height > 1) {
+        const measuredWidth = node.data.width;
+        const measuredHeight = node.data.height;
+        const adjustedHeight = isWidgetWindow
+            ? Math.max(100, measuredHeight - WIDGET_WINDOW_HEIGHT_OFFSET) + extraHeight
+            : measuredHeight + extraHeight;
+
+        return {
+            x: node.position.x - extraLeft,
+            y: node.position.y,
+            width: measuredWidth + extraLeft + extraRight,
+            height: adjustedHeight
+        };
+    }
+
+    // --- Fallback estimation logic ---
+    let width = 280;
+    let height = 180;
+
+    let sizingConfig = nodeSizeFallbacks[node.type];
+    if (typeof sizingConfig === 'string') {
+        sizingConfig = nodeSizeFallbacks[sizingConfig];
+    }
+
+    if (sizingConfig && typeof sizingConfig === 'object') {
+        width = typeof sizingConfig.width === 'function' ? sizingConfig.width(node) : sizingConfig.width;
+        height = typeof sizingConfig.height === 'function' ? sizingConfig.height(node) : sizingConfig.height;
+        if (sizingConfig.extraLeft) extraLeft = sizingConfig.extraLeft;
+        if (sizingConfig.extraRight) extraRight = sizingConfig.extraRight;
+    }
+
+    // Allow partial override from node data even in fallback mode
+    if (node.data?.width && node.data.width > 50) width = node.data.width;
+    if (!isLayerSource && node.data?.height && node.data.height > 50) height = node.data.height;
+
+    // Generic height adjustment for nodes with ports that don't have special sizing
+    const isPanel = node.type === 'panel';
+    const isLayerView = node.type === 'layer-view';
+    const isNumberSlider = node.type === 'number-slider';
+    if (!isPanel && !isSeries && !isLayerView && !isNumberSlider && maxPorts > 0) {
+        height = Math.max(height, 140 + (maxPorts * 40));
+    }
+
+    height += extraHeight;
+    if (isWidgetWindow) {
+        height = Math.max(100, height - WIDGET_WINDOW_HEIGHT_OFFSET);
+    }
+
+    // Safety floor
+    if (width < 100) width = 200;
+    const minHeight = node.type === 'layer-view' ? 50 : 100;
+    if (height < minHeight) height = minHeight;
+
+    return {
+        x: node.position.x - extraLeft,
+        y: node.position.y,
+        width: width + extraLeft + extraRight,
+        height
+    };
+};
+
 
 interface UseGroupLogicProps {
-    nodes: NodeData[];
-    setNodes: React.Dispatch<React.SetStateAction<NodeData[]>>;
     selectedNodeIds: Set<string>;
     setSelectedNodeIds: (ids: Set<string>) => void;
     onNodeCreate?: (node: NodeData) => void;
+    groupEligibleNodeIds?: Set<string>;
+    groupEditorOrigin?: 'nodes' | 'widget';
 }
 
 export const useGroupLogic = ({
-    nodes,
-    setNodes,
     selectedNodeIds,
     setSelectedNodeIds,
-    onNodeCreate
+    onNodeCreate,
+    groupEligibleNodeIds,
+    groupEditorOrigin
 }: UseGroupLogicProps) => {
+    const { nodes, setNodesWithHistory } = useNodeGraph();
 
     // Animation frame IDs for group resize (smoother than setTimeout)
     const groupResizeFrames = useRef<Map<string, number>>(new Map());
@@ -30,50 +175,18 @@ export const useGroupLogic = ({
 
         // Schedule new resize with requestAnimationFrame (syncs with browser refresh)
         const frameId = requestAnimationFrame(() => {
-            setNodes((prev) => {
+            setNodesWithHistory((prev) => {
                 const group = prev.find(n => n.id === groupId && n.type === 'group');
                 if (!group || !group.data?.childNodeIds) return prev;
 
                 const childNodes = prev.filter(n => group.data?.childNodeIds?.includes(n.id));
                 if (childNodes.length === 0) return prev;
 
-                const PADDING = 25;
-                const PADDING_BOTTOM = 25;
+                const PADDING = 10;
+                const PADDING_BOTTOM = 10;
                 const HEADER_HEIGHT = 45;
 
-                // Measure node dimensions using data or fallback to defaults (for accurate bounding box)
-                const childDimensions = childNodes.map(child => {
-                    let width = 280;
-                    let height = 180;
-
-                    const isPanel = child.type === 'panel' || (child.data?.customName && child.data.customName.includes('Panel'));
-                    const isCustom = child.type === 'custom' || child.type === 'antivirus';
-
-                    if (isPanel) {
-                        width = 340;
-                        height = 300;
-                    } else if (isCustom) {
-                        const nameLen = (child.data?.customName || 'Custom Node').length;
-                        width = Math.min(620, Math.max(320, (nameLen * 8) + 180));
-
-                        const maxPorts = Math.max(child.data?.inputs?.length || 0, child.data?.outputs?.length || 0);
-                        if (maxPorts > 0) height = 140 + (maxPorts * 40);
-                    }
-
-                    if (child.data?.width && child.data.width > 50) width = child.data.width;
-                    if (child.data?.height && child.data.height > 50) height = child.data.height;
-
-                    // Safety floor
-                    if (width < 100) width = 200;
-                    if (height < 100) height = 100;
-
-                    return {
-                        x: child.position.x,
-                        y: child.position.y,
-                        width,
-                        height
-                    };
-                });
+                const childDimensions = childNodes.map(getNodeBoundingBox);
 
                 const minX = Math.min(...childDimensions.map(d => d.x));
                 const maxX = Math.max(...childDimensions.map(d => d.x + d.width));
@@ -120,58 +233,29 @@ export const useGroupLogic = ({
         });
 
         groupResizeFrames.current.set(groupId, frameId);
-    }, [setNodes]);
+    }, [setNodesWithHistory]);
 
     // Create a group node from selected nodes
     const createGroupNode = useCallback(() => {
-        const selectedNodes = nodes.filter(n => selectedNodeIds.has(n.id));
+        const selectedNodes = nodes.filter(n => {
+            if (!selectedNodeIds.has(n.id)) return false;
+            if (!groupEligibleNodeIds) return true;
+            return groupEligibleNodeIds.has(n.id);
+        });
         if (selectedNodes.length < 2) return;
+        const resolvedEditorOrigin = groupEditorOrigin ?? selectedNodes[0]?.data?.editorOrigin;
 
-        const NODE_WIDTH = 280;
-        const NODE_HEIGHT = 180;
-        const PADDING = 25;
-        const PADDING_BOTTOM = 25;
+        const PADDING = 10;
+        const PADDING_BOTTOM = 10;
         const HEADER_HEIGHT = 45;
 
-        // Calculate bounding box
-        const minX = Math.min(...selectedNodes.map(n => n.position.x));
-        const minY = Math.min(...selectedNodes.map(n => n.position.y));
+        const childDimensions = selectedNodes.map(getNodeBoundingBox);
 
-        const maxX = Math.max(...selectedNodes.map(n => {
-            let w = 280;
-            const isPanel = n.type === 'panel' || (n.data?.customName && n.data.customName.includes('Panel'));
-            const isCustom = n.type === 'custom' || n.type === 'antivirus';
+        const minX = Math.min(...childDimensions.map(d => d.x));
+        const maxX = Math.max(...childDimensions.map(d => d.x + d.width));
+        const minY = Math.min(...childDimensions.map(d => d.y));
+        const maxY = Math.max(...childDimensions.map(d => d.y + d.height));
 
-            if (isPanel) {
-                w = 340;
-            } else if (isCustom) {
-                const nameLen = (n.data?.customName || 'Custom Node').length;
-                w = Math.min(620, Math.max(320, (nameLen * 8) + 180));
-            }
-
-            if (n.data?.width && n.data.width > 50) w = n.data.width;
-            if (w < 100) w = 200; // Safety floor
-
-            return n.position.x + w;
-        }));
-
-        const maxY = Math.max(...selectedNodes.map(n => {
-            let h = 180;
-            const isPanel = n.type === 'panel' || (n.data?.customName && n.data.customName.includes('Panel'));
-            const isCustom = n.type === 'custom' || n.type === 'input' || n.type === 'output' || n.type === 'antivirus';
-
-            if (isPanel) {
-                h = 300;
-            } else if (isCustom) {
-                const maxPorts = Math.max(n.data?.inputs?.length || 0, n.data?.outputs?.length || 0);
-                if (maxPorts > 0) h = 140 + (maxPorts * 40);
-            }
-
-            if (n.data?.height && n.data.height > 50) h = n.data.height;
-            if (h < 100) h = 100; // Safety floor
-
-            return n.position.y + h;
-        }));
 
         // Group node dimensions
         const groupWidth = (maxX - minX) + (PADDING * 2);
@@ -181,7 +265,7 @@ export const useGroupLogic = ({
 
         // Create group node
         const groupNode: NodeData = {
-            id: `group-${Date.now()}`,
+            id: `group-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             type: 'group',
             position: { x: groupX, y: groupY },
             data: {
@@ -189,27 +273,58 @@ export const useGroupLogic = ({
                 height: groupHeight,
                 isGroup: true,
                 customName: `Group(${selectedNodes.length})`,
-                childNodeIds: Array.from(selectedNodeIds),
-                inputs: [],
+                childNodeIds: selectedNodes.map(n => n.id),
+              inputs: [],
                 outputs: [],
                 scale: { x: 1, y: 1, z: 1 },
                 rotation: { x: 0, y: 0, z: 0 },
                 location: { x: 0, y: 0, z: 0 },
+                isNewGroup: true,
+                ...(resolvedEditorOrigin ? { editorOrigin: resolvedEditorOrigin } : {})
             },
         };
 
         // Prepend to nodes array (renders first = behind)
-        setNodes((prev) => [groupNode, ...prev]);
+        setNodesWithHistory((prev) => [groupNode, ...prev]);
         onNodeCreate?.(groupNode);
+
+        // Recalculate once the DOM has had a moment to report real sizes.
+        // This fixes cases where the initial group is created from fallback
+        // sizes and ends up not covering the actual nodes.
+        setTimeout(() => {
+            scheduleGroupResize(groupNode.id);
+        }, 50);
 
         // Clear selection after exit animation completes
         setTimeout(() => {
             setSelectedNodeIds(new Set());
         }, 500);
-    }, [nodes, selectedNodeIds, onNodeCreate, setNodes, setSelectedNodeIds]);
+
+        // Remove the pop-in flag after the animation finishes
+        setTimeout(() => {
+            setNodesWithHistory((prev) => prev.map(node => {
+                if (node.id === groupNode.id) {
+                    return {
+                        ...node,
+                        data: { ...node.data, isNewGroup: false }
+                    };
+                }
+                return node;
+            }));
+        }, 500);
+    }, [
+        nodes,
+        selectedNodeIds,
+        onNodeCreate,
+        setNodesWithHistory,
+        setSelectedNodeIds,
+        groupEligibleNodeIds,
+        groupEditorOrigin,
+        scheduleGroupResize
+    ]);
 
     const handleJoinGroup = useCallback((nodeId: string, groupId: string) => {
-        setNodes((prev) => {
+        setNodesWithHistory((prev) => {
             // 1. First remove the node from any OTHER group it might be part of
             const cleanedNodes = prev.map(node => {
                 if (node.type === 'group' && node.data.childNodeIds?.includes(nodeId) && node.id !== groupId) {
@@ -243,10 +358,10 @@ export const useGroupLogic = ({
         setTimeout(() => {
             scheduleGroupResize(groupId);
         }, 50);
-    }, [setNodes, scheduleGroupResize]);
+    }, [setNodesWithHistory, scheduleGroupResize]);
 
     const handleLeaveGroup = useCallback((nodeId: string) => {
-        setNodes((prev) => {
+        setNodesWithHistory((prev) => {
             return prev.map(node => {
                 if (node.type === 'group' && node.data.childNodeIds?.includes(nodeId)) {
                     return {
@@ -269,7 +384,7 @@ export const useGroupLogic = ({
                 scheduleGroupResize(parentGroup.id);
             }, 50);
         }
-    }, [setNodes, nodes, scheduleGroupResize]);
+    }, [setNodesWithHistory, nodes, scheduleGroupResize]);
 
     // Helper to check if a node overlaps with a group
     const isNodeOverlappingGroup = useCallback((node: NodeData, group: NodeData): boolean => {

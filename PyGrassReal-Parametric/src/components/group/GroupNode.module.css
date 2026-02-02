@@ -1,0 +1,272 @@
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes popOut {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+.groupNodeBase {
+    position: absolute;
+    border-radius: 20px;
+    user-select: none;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.dragging {
+    cursor: grabbing;
+}
+
+.notDragging {
+    cursor: grab;
+}
+
+.deleting {
+    animation: popOut 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.notDeleting {
+    animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.popIn {
+    animation: popIn 0.45s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    position: relative;
+    z-index: 20;
+}
+
+.nameContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: text;
+    margin-right: 8px;
+}
+
+.nameInput {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    color: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 2px 6px;
+    outline: none;
+    width: 120px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.nameSpan {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.toggleExternalLabelButton {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    opacity: 0.6;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.toggleExternalLabelButton:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.colorPickerButtonContainer {
+    position: absolute;
+    left: 12px;
+    z-index: 10;
+}
+
+.colorPickerButton {
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.2s;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.colorPickerButton:hover {
+    transform: translateY(-2px);
+}
+
+.colorPickerPopup {
+    position: absolute;
+    bottom: 36px;
+    left: 0;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    gap: 8px;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: default;
+    z-index: 1000;
+}
+
+.colorSwatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.colorSwatch:hover {
+    transform: scale(1.25) !important;
+}
+
+.controlsContainer {
+    position: absolute;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+    z-index: 12;
+}
+
+.clusterButton {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+.clusterButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5);
+}
+
+.deleteButton {
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 1);
+    transform: scale(1.1);
+}
+
+.deleteOptions {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2000;
+}
+
+.deleteOptionButton {
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.deleteGroupOnly {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.deleteWithChildren {
+    background: rgba(239, 68, 68, 0.85);
+    border: 1px solid rgba(239, 68, 68, 0.6);
+}
+
+.body {
+    flex: 1;
+    position: relative;
+    pointer-events: none;
+}
+
+.cornerIndicator {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+}
+
+.topLeft {
+    top: 8px;
+    left: 8px;
+    border-top: 2px solid;
+    border-left: 2px solid;
+    border-top-left-radius: 4px;
+}
+.topRight {
+    top: 8px;
+    right: 8px;
+    border-top: 2px solid;
+    border-right: 2px solid;
+    border-top-right-radius: 4px;
+}
+.bottomLeft {
+    bottom: 8px;
+    left: 8px;
+    border-bottom: 2px solid;
+    border-left: 2px solid;
+    border-bottom-left-radius: 4px;
+}
+.bottomRight {
+    bottom: 8px;
+    right: 8px;
+    border-bottom: 2px solid;
+    border-right: 2px solid;
+    border-bottom-right-radius: 4px;
+}

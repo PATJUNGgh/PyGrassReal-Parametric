@@ -1,6 +1,6 @@
 import React from 'react';
 import { TransformControls } from '@react-three/drei';
-import { SceneObject, TransformMode } from '../types';
+import type { SceneObject, TransformMode } from '../../types/scene';
 import { Model } from './Model';
 import * as THREE from 'three';
 
@@ -77,7 +77,7 @@ const ObjectWrapper: React.FC<ObjectWrapperProps> = ({
                     ref={meshRef}
                     data={obj}
                     isSelected={isSelected}
-                    onClick={(e) => onSelect(obj.id)}
+                    onClick={(_e) => onSelect(obj.id)}
                 />
             </TransformControls>
         ) : (
@@ -85,7 +85,7 @@ const ObjectWrapper: React.FC<ObjectWrapperProps> = ({
                 ref={meshRef}
                 data={obj}
                 isSelected={isSelected}
-                onClick={(e) => onSelect(obj.id)}
+                onClick={(_e) => onSelect(obj.id)}
             />
         )
     );

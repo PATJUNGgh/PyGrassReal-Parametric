@@ -1,502 +1,266 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { LogIn, LogOut, Trash2, X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { CustomNode } from './CustomNode';
+import type { NodeData } from '../types/NodeTypes';
 
-interface NumberSliderNodeProps {
+// Props for the internal body component
+interface SliderBodyProps {
     id: string;
-    data: {
-        customName?: string;
-        outputs?: Array<{ id: string; label: string }>;
-        min?: number;
-        max?: number;
-        step?: number;
-        value?: number;
-        width?: number;
-        height?: number;
-    };
-    position: { x: number; y: number };
-    selected: boolean;
-    onPositionChange: (id: string, position: { x: number; y: number }) => void;
-    onDataChange: (id: string, data: any) => void;
-    onDelete: (id: string) => void;
-    onConnectionStart: (nodeId: string, portId: string, position: { x: number; y: number }) => void;
-    onConnectionComplete: (nodeId: string, portId: string) => void;
-    connections?: Array<{ id: string; sourceNodeId: string; targetNodeId: string; sourcePort: string; targetPort: string }>;
-    onDeleteConnection?: (connectionId: string) => void;
-    isShaking?: boolean;
-    onSelect?: () => void;
-    parentGroupId?: string;
-    overlappingGroupId?: string;
-    onJoinGroup?: (nodeId: string, groupId: string) => void;
-    onLeaveGroup?: (nodeId: string) => void;
-    scale?: number;
-    isInfected?: boolean;
-    onDuplicate?: (id: string) => void;
+    data: NodeData['data'];
+    onDataChange: (id: string, data: Partial<NodeData['data']>) => void;
 }
 
-export const NumberSliderNode: React.FC<NumberSliderNodeProps> = ({
-    id,
-    data,
-    position,
-    selected,
-    onPositionChange,
-    onDataChange,
-    onDelete,
-    onConnectionStart,
-    onConnectionComplete,
-    connections = [],
-    onDeleteConnection,
-    isShaking,
-    onSelect,
-    parentGroupId,
-    overlappingGroupId,
-    onJoinGroup,
-    onLeaveGroup,
-    scale,
-    isInfected,
-    onDuplicate,
-}) => {
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState<{
-        mouseX: number;
-        mouseY: number;
-        nodeX: number;
-        nodeY: number;
-    } | null>(null);
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [hasMounted, setHasMounted] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-
-    const nodeRef = useRef<HTMLDivElement>(null);
-    const customName = data.customName || 'Number Slider';
-    const outputs = data.outputs || [{ id: 'output-main', label: 'Value' }];
-    const outputPort = outputs[0];
+// The unique UI for the Number Slider, to be passed as children
+const SliderBody: React.FC<SliderBodyProps> = ({ id, data, onDataChange }) => {
+    // Extract slider-specific values with defaults
+    const value = typeof data.value === 'number' ? data.value : 50;
     const min = typeof data.min === 'number' ? data.min : 0;
     const max = typeof data.max === 'number' ? data.max : 100;
-    const step = typeof data.step === 'number' ? data.step : 1;
-    const value = typeof data.value === 'number' ? data.value : 50;
+    const step = data.step !== undefined ? Number(data.step) : 1;
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button !== 0) return;
-        setIsDragging(true);
-        setDragStart({
-            mouseX: e.clientX,
-            mouseY: e.clientY,
-            nodeX: position.x,
-            nodeY: position.y,
-        });
-    };
+    // Effect to enforce constraints (min <= value <= max) after any data change.
+    // This is safer than onBlur because it avoids race conditions with state updates.
+    React.useEffect(() => {
+        const currentMin = data.min ?? 0;
+        const currentMax = data.max ?? 100;
+        const currentValue = data.value ?? 50;
 
-    const handleMouseMove = (e: MouseEvent) => {
-        if (isDragging && dragStart) {
-            const currentScale = Math.max(scale || 1, 0.01);
-            const deltaX = (e.clientX - dragStart.mouseX) / currentScale;
-            const deltaY = (e.clientY - dragStart.mouseY) / currentScale;
+        let updatedMin = currentMin;
+        let updatedMax = currentMax;
+        let updatedValue = currentValue;
 
-            onPositionChange(id, {
-                x: dragStart.nodeX + deltaX,
-                y: dragStart.nodeY + deltaY,
-            });
+        let needsUpdate = false;
+
+        // Rule: Min cannot be greater than Max. If it is, clamp min down to max.
+        if (updatedMin > updatedMax) {
+            updatedMin = updatedMax;
+            needsUpdate = true;
         }
-    };
 
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    useEffect(() => {
-        if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-            return () => {
-                window.removeEventListener('mousemove', handleMouseMove);
-                window.removeEventListener('mouseup', handleMouseUp);
-            };
+        // Rule: Value must be within the (newly clamped) min/max range.
+        if (updatedValue < updatedMin) {
+            updatedValue = updatedMin;
+            needsUpdate = true;
         }
-    }, [isDragging, dragStart]);
+        if (updatedValue > updatedMax) {
+            updatedValue = updatedMax;
+            needsUpdate = true;
+        }
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setHasMounted(true);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, []);
+        // Only call onDataChange if a value has actually changed to avoid infinite loops.
+        if (needsUpdate) {
+            onDataChange(id, { ...data, min: updatedMin, max: updatedMax, value: updatedValue });
+        }
+    }, [data.min, data.max, data.value, id, data, onDataChange]);
 
-    useEffect(() => {
-        if (!hasMounted) return;
-        const timer = setTimeout(() => {
-            onDataChange(id, { ...data, _structureChanged: Date.now() });
-        }, 150);
-        return () => clearTimeout(timer);
-    }, [hasMounted]);
 
-    const handleNameChange = (newName: string) => {
-        onDataChange(id, { ...data, customName: newName });
-    };
-
-    const handlePortMouseDown = (e: React.MouseEvent, portId: string) => {
-        e.stopPropagation();
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        onConnectionStart(id, portId, {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2,
-        });
-    };
-
-    const handlePortMouseUp = (e: React.MouseEvent, portId: string) => {
-        e.stopPropagation();
-        onConnectionComplete(id, portId);
-    };
-
-    const handleSliderChange = (nextValue: number) => {
-        const clamped = Math.max(min, Math.min(max, nextValue));
+    const handleSliderChange = (newValue: number) => {
+        let clamped = Math.max(min, Math.min(max, newValue));
+        // Ensure clean floating point numbers
+        if (step < 1) {
+            clamped = Number(clamped.toFixed(4));
+        }
         onDataChange(id, { ...data, value: clamped });
     };
 
-    const isConnectedOutput = connections.some(
-        conn => conn.sourceNodeId === id && conn.sourcePort === outputPort.id
-    );
-
-    const animationStyle = isShaking
-        ? 'shake 0.3s ease-in-out'
-        : !hasMounted
-            ? 'popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-            : 'none';
+    const handleInputChange = (field: 'min' | 'max' | 'value', numericValue: number) => {
+        if (isNaN(numericValue)) return;
+        onDataChange(id, { ...data, [field]: numericValue });
+    };
 
     return (
-        <>
-            <style>
-                {`
-                    @keyframes popIn {
-                        0% { transform: scale(0); opacity: 0; }
-                        70% { transform: scale(1.1); opacity: 1; }
-                        100% { transform: scale(1); opacity: 1; }
-                    }
-                    @keyframes shake {
-                        0% { transform: translate(0, 0); }
-                        25% { transform: translate(-3px, 3px); }
-                        50% { transform: translate(3px, -3px); }
-                        75% { transform: translate(-3px, 3px); }
-                        100% { transform: translate(0, 0); }
-                    }
-                    @keyframes criticalBorderPulse {
-                        0% { 
-                            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.4), 0 0 30px 5px rgba(255, 0, 0, 0.6); 
-                            border-color: #ff0000; 
-                        }
-                        50% { 
-                            box-shadow: 0 0 0 8px rgba(255, 50, 50, 0.7), 0 0 60px 20px rgba(255, 0, 0, 0.9); 
-                            border-color: #ff5555;
-                        }
-                        100% { 
-                            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.4), 0 0 30px 5px rgba(255, 0, 0, 0.6); 
-                            border-color: #ff0000; 
-                        }
-                    }
-                    .node-port {
-                        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    }
-                    .node-port:hover {
-                        transform: scale(1.2) !important;
-                        box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-                        z-index: 101;
-                    }
-                `}
-            </style>
-            <div
-                id={id}
-                ref={nodeRef}
-                data-no-selection="true"
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    onSelect?.();
-                    handleMouseDown(e);
-                }}
-                style={{
-                    position: 'absolute',
-                    left: `${position.x}px`,
-                    top: `${position.y}px`,
-                    width: '260px',
-                    background: isInfected
-                        ? 'linear-gradient(165deg, rgba(220, 38, 38, 0.85) 0%, rgba(255, 255, 255, 0.4) 100%)'
-                        : 'linear-gradient(165deg, rgba(14, 165, 233, 0.6) 0%, rgba(255, 255, 255, 0.5) 100%)',
-                    border: isInfected
-                        ? '3px solid #ff0000'
-                        : selected ? '3px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.5)',
-                    borderRadius: '16px',
-                    boxShadow: isInfected
-                        ? '0 0 0 4px rgba(255, 0, 0, 0.4), 0 0 30px 5px rgba(255, 0, 0, 0.8), 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255, 0, 0, 0.3)'
-                        : selected
-                            ? '0 0 0 4px rgba(56, 189, 248, 0.4), 0 0 30px 5px rgba(56, 189, 248, 0.6), 0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(56, 189, 248, 0.3)'
-                            : '0 10px 30px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)',
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    userSelect: 'none',
-                    backdropFilter: isInfected ? 'blur(12px) saturate(180%)' : 'blur(20px) saturate(180%)',
-                    WebkitBackdropFilter: isInfected ? 'blur(12px) saturate(180%)' : 'blur(20px) saturate(180%)',
-                    color: '#fff',
-                    fontFamily: "'Inter', sans-serif",
-                    animation: (isInfected && !isShaking) ? 'criticalBorderPulse 1.5s infinite ease-in-out' : animationStyle,
-                    zIndex: selected ? 100 : 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    pointerEvents: 'auto',
-                }}
-                onContextMenu={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect?.();
-                }}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-            >
-                <div
-                    style={{
-                        padding: '14px 18px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: 'transparent',
-                        borderRadius: '14px 14px 0 0',
-                    }}
-                >
-                    {isEditingName ? (
-                        <input
-                            type="text"
-                            value={customName}
-                            onChange={(e) => handleNameChange(e.target.value)}
-                            onBlur={() => setIsEditingName(false)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') setIsEditingName(false);
-                            }}
-                            autoFocus
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                border: '2px solid rgba(14, 165, 233, 0.6)',
-                                borderRadius: '6px',
-                                padding: '6px 10px',
-                                color: '#0f172a',
-                                fontSize: '14px',
-                                fontWeight: 600,
-                                width: '150px',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    ) : (
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                cursor: 'text',
-                            }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsEditingName(true);
-                            }}
-                        >
-                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
-                                {customName}
-                            </span>
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                        {isHovered && onDuplicate && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDuplicate(id);
-                                }}
-                                title="Duplicate Node"
-                                style={{
-                                    background: 'rgba(255, 255, 255, 0.2)',
-                                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                                    borderRadius: '6px',
-                                    width: '28px',
-                                    height: '28px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#fff',
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.4)';
-                                    e.currentTarget.style.transform = 'scale(1.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }}
-                            >
-                                <span style={{ fontSize: '14px', fontWeight: 'bold', lineHeight: 1 }}>+</span>
-                            </button>
-                        )}
-                        {overlappingGroupId && !parentGroupId && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onJoinGroup?.(id, overlappingGroupId);
-                                }}
-                                style={{
-                                    background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    borderRadius: '6px',
-                                    padding: '6px',
-                                    width: '28px',
-                                    height: '28px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    boxShadow: '0 2px 6px rgba(34, 197, 94, 0.4)',
-                                    transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1.1)';
-                                    e.currentTarget.style.boxShadow = '0 0 12px rgba(74, 222, 128, 0.6)';
-                                    e.currentTarget.style.background = 'linear-gradient(135deg, #60f090 0%, #4ade80 100%)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(34, 197, 94, 0.4)';
-                                    e.currentTarget.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                                }}
-                                title="Join Group"
-                            >
-                                <LogIn size={14} strokeWidth={2.5} />
-                            </button>
-                        )}
-
-                        {parentGroupId && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onLeaveGroup?.(id);
-                                }}
-                                style={{
-                                    background: 'rgba(255, 165, 0, 0.3)',
-                                    border: '1px solid rgba(255, 165, 0, 0.6)',
-                                    borderRadius: '6px',
-                                    padding: '6px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                                title="Leave Group"
-                            >
-                                <LogOut size={14} />
-                            </button>
-                        )}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(id);
-                            }}
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.2)',
-                                border: '1px solid rgba(255, 255, 255, 0.4)',
-                                borderRadius: '6px',
-                                padding: '6px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                            title="Delete Node"
-                        >
-                            <Trash2 size={14} color="#fff" />
-                        </button>
-                    </div>
-                </div>
-
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.8)', letterSpacing: '0.5px' }}>
-                            VALUE
-                        </span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>{value}</span>
-                    </div>
-                    <input
-                        type="range"
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={value}
-                        onChange={(e) => handleSliderChange(Number(e.target.value))}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            width: '100%',
-                            cursor: 'pointer',
+        <div
+            // compensating for the restored node padding
+            style={{ padding: '0', flex: 1, minWidth: 0, marginRight: '-36px' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+        >
+            <div style={{ flex: 1 }}>
+                {/* Top row for Min/Max/Step inputs */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', gap: '6px' }}>
+                    <SmartInput label="MIN" value={min} step={step} onChange={val => handleInputChange('min', val)} onBlur={() => { }} />
+                    <SmartInput
+                        label="STEP"
+                        value={step}
+                        step={0.001}
+                        onChange={val => onDataChange(id, { ...data, step: Math.max(0, val) })}
+                        onBlur={() => {
+                            if (step <= 0) onDataChange(id, { ...data, step: 0.1 });
                         }}
                     />
+                    <SmartInput label="MAX" value={max} step={step} onChange={val => handleInputChange('max', val)} onBlur={() => { }} />
+                </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        <span>{min}</span>
-                        <span>{max}</span>
-                    </div>
-
-                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', position: 'relative' }}>
-                        <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)', marginRight: '10px' }}>
-                            {outputPort.label}
-                        </span>
-                        <div style={{
-                            position: 'absolute',
-                            right: '-32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            zIndex: 100
-                        }}>
-                            <div
-                                id={`port-${id}-${outputPort.id}`}
-                                className="node-port"
-                                onMouseDown={(e) => handlePortMouseDown(e, outputPort.id)}
-                                onMouseUp={(e) => handlePortMouseUp(e, outputPort.id)}
-                                style={{
-                                    width: '14px',
-                                    height: '14px',
-                                    borderRadius: '50%',
-                                    background: '#ef4444',
-                                    border: '2px solid #ffffff',
-                                    cursor: 'crosshair',
-                                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)',
-                                    position: 'relative',
-                                }}
-                            />
-                            {isConnectedOutput && onDeleteConnection && (
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const connsToDelete = connections.filter(
-                                            c => c.sourceNodeId === id && c.sourcePort === outputPort.id
-                                        );
-                                        connsToDelete.forEach(c => onDeleteConnection(c.id));
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '-25px',
-                                        cursor: 'pointer',
-                                        color: '#000000',
-                                        background: '#ff4d4f',
-                                        borderRadius: '50%',
-                                        width: '16px',
-                                        height: '16px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                    }}
-                                    title="Disconnect All"
-                                >
-                                    <X size={10} strokeWidth={3} />
-                                </div>
-                            )}
-                        </div>
+                {/* Bottom row for slider and value output */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <SmartInput
+                        label=""
+                        value={value}
+                        step={step}
+                        onChange={(val) => handleInputChange('value', val)}
+                        onBlur={() => handleSliderChange(value)}
+                        width="64px"
+                        style={{
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            padding: '4px 8px',
+                            textAlign: 'center',
+                            background: 'rgba(15, 23, 42, 0.45)',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                        }}
+                    />
+                    <div style={{ flex: 1 }}>
+                        <input
+                            type="range"
+                            min={min}
+                            max={max}
+                            step={step}
+                            value={value}
+                            onChange={(e) => handleSliderChange(Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            style={{ width: '100%', cursor: 'pointer', accentColor: '#38bdf8' }}
+                        />
                     </div>
                 </div>
             </div>
-        </>
+        </div>
+    );
+};
+
+// Smart Input Component that handles local string state for reliable editing
+interface SmartInputProps {
+    label: string;
+    value: number;
+    step?: number;
+    onChange: (val: number) => void;
+    onBlur: () => void;
+    width?: string;
+    style?: React.CSSProperties;
+}
+
+const SmartInput: React.FC<SmartInputProps> = ({ label, value, step, onChange, onBlur, width = "48px", style }) => {
+    const [localValue, setLocalValue] = React.useState<string>(value.toString());
+    const [isEditing, setIsEditing] = React.useState(false);
+
+    // Sync from props when not editing
+    React.useEffect(() => {
+        if (!isEditing) {
+            setLocalValue(value.toString());
+        }
+    }, [value, isEditing]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVal = e.target.value;
+        setLocalValue(newVal);
+
+        const num = parseFloat(newVal);
+        // Only trigger update if it's a valid number
+        if (!isNaN(num)) {
+            onChange(num);
+        }
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+
+        // Try to parse the final value from local state
+        const num = parseFloat(localValue);
+
+        // If it's a valid number, commit it via onChange
+        if (!isNaN(num) && localValue.trim() !== '') {
+            onChange(num);
+        } else {
+            // If invalid (e.g. empty or "-"), revert the input to the last good prop value
+            setLocalValue(value.toString());
+        }
+
+        // Now, call the original onBlur prop
+        onBlur();
+        // Force sync back to formatted value from props (handled by useEffect)
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onPointerDown={(e) => e.stopPropagation()}>
+            {label && (
+                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.4px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {label}
+                </span>
+            )}
+            <input
+                className="nodrag"
+                type="number"
+                value={localValue}
+                step="any"
+                onChange={handleChange}
+                onFocus={() => setIsEditing(true)}
+                onBlur={handleBlur}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    e.stopPropagation(); // Prevent node deletion etc.
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    width,
+                    textAlign: style?.textAlign || 'left',
+                    fontSize: style?.fontSize || '10px',
+                    fontWeight: style?.fontWeight || 600,
+                    color: '#e2e8f0',
+                    background: style?.background || 'transparent',
+                    border: style?.border || '1px dashed rgba(255, 255, 255, 0.35)',
+                    borderRadius: '6px',
+                    padding: style?.padding || '2px 4px',
+                    ...style
+                }}
+            />
+        </div>
+    );
+};
+
+// The main exported component, which wraps CustomNode
+export const NumberSliderNode: React.FC<Omit<React.ComponentProps<typeof CustomNode>, 'children'>> = (props) => {
+    const enhancedData = useMemo(() => {
+        return {
+            ...props.data,
+            customName: props.data.customName || 'Number Slider',
+            width: props.data.width || 480,
+            minWidth: 360,
+            // Define the output port here so CustomNode can render it
+            outputs: [{ id: 'output-value', label: 'Value', type: 'number' as const }],
+            // Enable hide options to show default ports and controls
+            hideInputs: true,
+            hideOutputsHeader: true,
+            hideOutputsAdd: true,
+            hidePortLabels: true,
+            hidePortControls: true,
+            hideModifierMenu: true,
+
+            // Enable resizing (Left handle implemented in CustomNode)
+            resizable: true,
+
+            // Constrain Outputs Area to force slider expansion
+            outputsAreaWidth: 52,
+
+            // Adjust Output Port to the right
+            outputPortOffsetRight: -6,
+
+            // Restore stable padding with reduced bottom
+            bodyPadding: '15px 20px 4px 10px',
+
+            // Override default minHeight (100px) to fit content tightly
+            bodyMinHeight: 60,
+        };
+    }, [props.data]);
+
+    return (
+        <CustomNode {...props} data={enhancedData}>
+            {/* The slider UI is passed as children, which CustomNode will render in the middle */}
+            <SliderBody
+                id={props.id}
+                data={props.data}
+                onDataChange={props.onDataChange}
+            />
+        </CustomNode>
     );
 };
