@@ -66,108 +66,227 @@ const nodeSizeFallbacks: Record<string, NodeSizing | string> = {
 
 
 export const getNodeBoundingBox = (node: NodeData) => {
-    const isSeries = node.type === 'series';
-    const isViewport = node.type === 'viewport';
-    const isWidgetWindow = node.type === 'widget-window';
-    const isBackground = node.type === 'background-color';
-    const isBackgroundGradient = isBackground && node.data?.backgroundMode === 'gradient';
-    const isLayerSource = node.type === 'layer-source';
-    const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
-    const hasPorts = maxPorts > 0;
 
-    // Even when we have measured DOM width/height, ports stick out past the node
-    // box. If we ignore this, groups can render "above" nodes that visually extend
-    // beyond the measured bounds (as seen in the bug report).
+
+    // 1. Calculate port stick-out, which is mostly consistent
+
+
+    const isSeries = node.type === 'series';
+
+
     let extraLeft = 0;
+
+
     let extraRight = 0;
-    let extraHeight = 0;
+
 
     if (!isSeries) {
-        const inputCount = node.data?.inputs?.length || 0;
-        const outputCount = node.data?.outputs?.length || 0;
 
-        if (inputCount > 0) extraLeft += PORT_STICKOUT;
-        if (outputCount > 0) extraRight += PORT_STICKOUT;
 
-        if (inputCount > 0 || outputCount > 0) {
-            extraHeight += EXTRA_BOTTOM;
-        }
-    }
-    if (isViewport) {
-        extraHeight += VIEWPORT_EXTRA_BOTTOM;
-    }
-    if (isBackground) {
-        extraHeight += BACKGROUND_BASE_EXTRA_HEIGHT;
-    }
-    if (isBackgroundGradient) {
-        extraHeight += BACKGROUND_GRADIENT_EXTRA_HEIGHT;
+        if ((node.data?.inputs?.length || 0) > 0) extraLeft = PORT_STICKOUT;
+
+
+        if ((node.data?.outputs?.length || 0) > 0) extraRight = PORT_STICKOUT;
+
+
     }
 
-    // Prioritize real dimensions if they have been reported by the component,
-    // but expand them to include known visual stickouts.
+
+
+
+
+    let baseWidth: number;
+
+
+    let baseHeight: number;
+
+
+
+
+
+    // 2. Determine base dimensions. Prioritize real, measured dimensions from the DOM.
+
+
     const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
+
+
     if (!isPrimitive && node.data?.width && node.data?.height && node.data.width > 1 && node.data.height > 1) {
-        const measuredWidth = node.data.width;
-        const measuredHeight = node.data.height;
-        const adjustedHeight = isWidgetWindow
-            ? Math.max(100, measuredHeight - WIDGET_WINDOW_HEIGHT_OFFSET) + extraHeight
-            : measuredHeight + extraHeight;
 
-        return {
-            x: node.position.x - extraLeft,
-            y: node.position.y,
-            width: measuredWidth + extraLeft + extraRight,
-            height: adjustedHeight
-        };
+
+        baseWidth = node.data.width;
+
+
+        baseHeight = node.data.height;
+
+
+    } else {
+
+
+        // --- Use fallback estimation logic if no measured dimensions ---
+
+
+        let sizingConfig = nodeSizeFallbacks[node.type];
+
+
+        if (typeof sizingConfig === 'string') {
+
+
+            sizingConfig = nodeSizeFallbacks[sizingConfig] as NodeSizing;
+
+
+        }
+
+
+
+
+
+        let fallbackWidth = 280;
+
+
+        let fallbackHeight = 180;
+
+
+
+
+
+        if (sizingConfig) {
+
+
+            fallbackWidth = typeof sizingConfig.width === 'function' ? sizingConfig.width(node) : sizingConfig.width;
+
+
+            fallbackHeight = typeof sizingConfig.height === 'function' ? sizingConfig.height(node) : sizingConfig.height;
+
+
+            if (sizingConfig.extraLeft) extraLeft = sizingConfig.extraLeft;
+
+
+            if (sizingConfig.extraRight) extraRight = sizingConfig.extraRight;
+
+
+        }
+
+
+
+
+
+        // Allow partial override from node data even in fallback mode
+
+
+        baseWidth = (node.data?.width && node.data.width > 50) ? node.data.width : fallbackWidth;
+
+
+
+
+
+        const isLayerSource = node.type === 'layer-source';
+
+
+        if (!isPrimitive && !isLayerSource && node.data?.height && node.data.height > 50) {
+
+
+            baseHeight = node.data.height;
+
+
+        } else {
+
+
+            baseHeight = fallbackHeight;
+
+
+        }
+
+
     }
 
-    // --- Fallback estimation logic ---
-    let width = 280;
-    let height = 180;
 
-    let sizingConfig = nodeSizeFallbacks[node.type];
-    if (typeof sizingConfig === 'string') {
-        sizingConfig = nodeSizeFallbacks[sizingConfig];
+
+
+
+    // 3. Apply all adjustments and safety floors in one place
+
+
+    let adjustedHeight = baseHeight;
+
+
+
+
+
+    // Special offsets/additions based on type
+
+
+    if (node.type === 'widget-window') {
+
+
+        adjustedHeight = Math.max(100, adjustedHeight - WIDGET_WINDOW_HEIGHT_OFFSET);
+
+
     }
 
-    if (sizingConfig && typeof sizingConfig === 'object') {
-        width = typeof sizingConfig.width === 'function' ? sizingConfig.width(node) : sizingConfig.width;
-        height = typeof sizingConfig.height === 'function' ? sizingConfig.height(node) : sizingConfig.height;
-        if (sizingConfig.extraLeft) extraLeft = sizingConfig.extraLeft;
-        if (sizingConfig.extraRight) extraRight = sizingConfig.extraRight;
+
+    if (node.type === 'viewport') {
+
+
+        adjustedHeight += VIEWPORT_EXTRA_BOTTOM;
+
+
     }
 
-    // Allow partial override from node data even in fallback mode
-    if (node.data?.width && node.data.width > 50) width = node.data.width;
-    const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
-    if (!isLayerSource && node.data?.height && node.data.height > 50 && !isPrimitive) height = node.data.height;
 
-    // Generic height adjustment for nodes with ports that don't have special sizing
-    const isPanel = node.type === 'panel';
-    const isLayerView = node.type === 'layer-view';
-    const isNumberSlider = node.type === 'number-slider';
-    const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
-    if (!isPanel && !isSeries && !isLayerView && !isNumberSlider && maxPorts > 0) {
-        const baseMin = isPrimitive ? 110 : 182;
-        height = Math.max(height, baseMin + (maxPorts * 28));
+    if (node.type === 'background-color') {
+
+
+        adjustedHeight += BACKGROUND_BASE_EXTRA_HEIGHT;
+
+
+        if (node.data?.backgroundMode === 'gradient') {
+
+
+            adjustedHeight += BACKGROUND_GRADIENT_EXTRA_HEIGHT;
+
+
+        }
+
+
     }
 
-    height += extraHeight;
-    if (isWidgetWindow) {
-        height = Math.max(100, height - WIDGET_WINDOW_HEIGHT_OFFSET);
-    }
 
-    // Safety floor
-    if (width < 100) width = 200;
+
+
+
+    // 4. Apply safety floors to prevent nodes from being too small
+
+
+    const finalWidth = Math.max(100, baseWidth);
+
+
     const minHeight = node.type === 'layer-view' ? 50 : 100;
-    if (height < minHeight) height = minHeight;
+
+
+    const finalHeight = Math.max(minHeight, adjustedHeight);
+
+
+    
+
 
     return {
+
+
         x: node.position.x - extraLeft,
+
+
         y: node.position.y,
-        width: width + extraLeft + extraRight,
-        height
+
+
+        width: finalWidth + extraLeft + extraRight,
+
+
+        height: finalHeight
+
+
     };
+
+
 };
 
 

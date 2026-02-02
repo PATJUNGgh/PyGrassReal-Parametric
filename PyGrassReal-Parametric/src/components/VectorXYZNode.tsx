@@ -52,6 +52,7 @@ export const VectorXYZNode: React.FC<VectorXYZNodeProps> = ({
 }) => {
     const inputs = (node.data.inputs || []) as Port[];
     const outputs = (node.data.outputs || []) as Port[];
+    const fallbackHeight = calculateFallbackHeight(Math.max(inputs.length, outputs.length));
 
     return (
         <CustomNode
