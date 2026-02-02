@@ -281,7 +281,7 @@ export const useNodeOperations = ({
 
             if (parentGroup) {
                 // If the node is in a group, schedule a resize for the parent.
-                setTimeout(() => scheduleGroupResize(parentGroup.id), 50);
+                scheduleGroupResize(parentGroup.id);
             }
             return nextNodes;
         });

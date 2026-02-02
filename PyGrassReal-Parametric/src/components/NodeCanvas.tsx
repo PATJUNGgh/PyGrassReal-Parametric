@@ -392,10 +392,39 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
 
     // Notify parent of graph changes (for evaluation and scene sync).
     // Avoid triggering the evaluator while we are mid-undo/redo so we don't race with history restores.
-    const currentUndoing = isUndoingRef.current;
     useEffect(() => {
         onGraphChange?.(nodes, connections);
     }, [nodes, connections, onGraphChange]); // Removed currentUndoing check to ensure view updates on Undo
+
+    // Synchronize Background Color node with Scene background
+    useEffect(() => {
+        const bgNode = nodes.find(n => n.type === 'background-color');
+        if (bgNode && onBackgroundStyleChange) {
+            const data = bgNode.data;
+            const isGradient = data.backgroundMode === 'gradient';
+            const start = data.backgroundGradientStart || '#0f172a';
+            const end = data.backgroundGradientEnd || '#1f2937';
+            const angle = data.backgroundGradientAngle ?? 135;
+
+            let cssBackground = '';
+            let sceneColor = '';
+
+            if (isGradient) {
+                cssBackground = `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)`;
+                sceneColor = start; // Fallback for scene clear color
+            } else {
+                const color = data.backgroundColor || '#1e1e1e';
+                cssBackground = color;
+                sceneColor = color;
+            }
+
+            onBackgroundStyleChange({
+                cssBackground,
+                sceneColor,
+                isGradient
+            });
+        }
+    }, [nodes, onBackgroundStyleChange]);
 
     // Clear selection when switching to 3D mode (only when nodes uninteractive)
     useEffect(() => {
@@ -403,8 +432,6 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
             setSelectedNodeIds(new Set());
         }
     }, [currentMode, interactive]);
-
-
 
     const handleNodeDataChange = useCallback((id: string, data: Partial<NodeData['data']>) => {
         updateNodeData(id, data);

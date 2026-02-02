@@ -3,8 +3,8 @@ import type { NodeData } from '../types/NodeTypes';
 import { useNodeGraph } from '../context/NodeGraphContext';
 
 // --- Shared sizing constants ---
-const PORT_STICKOUT = 32;
-const EXTRA_BOTTOM = 8;
+const PORT_STICKOUT = 24;
+const EXTRA_BOTTOM = 0;
 const VIEWPORT_EXTRA_BOTTOM = 10;
 const WIDGET_WINDOW_HEIGHT_OFFSET = 0;
 const BACKGROUND_BASE_EXTRA_HEIGHT = 20;
@@ -22,7 +22,14 @@ type NodeSizing = {
 // Configuration for fallback node sizes. Aliases can be used for node types that share sizing logic.
 const nodeSizeFallbacks: Record<string, NodeSizing | string> = {
     panel: { width: 340, height: 300 },
-    series: { width: 260, height: 170, extraLeft: 57, extraRight: 32 },
+    series: {
+        width: 260,
+        height: (node) => {
+            const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
+            return maxPorts > 0 ? 182 + maxPorts * 28 : 160;
+        },
+        extraLeft: 57, extraRight: 32
+    },
     'layer-source': {
         width: 300,
         height: (node) => {
@@ -40,16 +47,25 @@ const nodeSizeFallbacks: Record<string, NodeSizing | string> = {
         },
         height: (node) => {
             const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
-            return maxPorts > 0 ? 140 + maxPorts * 40 : 180;
+            return maxPorts > 0 ? 182 + maxPorts * 28 : 200;
         },
     },
+    sphere: {
+        width: 300,
+        height: (node) => {
+            const maxPorts = Math.max(node.data?.inputs?.length || 0, node.data?.outputs?.length || 0);
+            return maxPorts > 0 ? 110 + maxPorts * 28 : 200;
+        },
+    },
+    box: 'sphere',
+    'vector-xyz': 'sphere',
     antivirus: 'custom',
     input: 'custom',
     output: 'custom',
 };
 
 
-const getNodeBoundingBox = (node: NodeData) => {
+export const getNodeBoundingBox = (node: NodeData) => {
     const isSeries = node.type === 'series';
     const isViewport = node.type === 'viewport';
     const isWidgetWindow = node.type === 'widget-window';
@@ -66,10 +82,16 @@ const getNodeBoundingBox = (node: NodeData) => {
     let extraRight = 0;
     let extraHeight = 0;
 
-    if (hasPorts && !isSeries) {
-        extraLeft += PORT_STICKOUT;
-        extraRight += PORT_STICKOUT;
-        extraHeight += EXTRA_BOTTOM;
+    if (!isSeries) {
+        const inputCount = node.data?.inputs?.length || 0;
+        const outputCount = node.data?.outputs?.length || 0;
+
+        if (inputCount > 0) extraLeft += PORT_STICKOUT;
+        if (outputCount > 0) extraRight += PORT_STICKOUT;
+
+        if (inputCount > 0 || outputCount > 0) {
+            extraHeight += EXTRA_BOTTOM;
+        }
     }
     if (isViewport) {
         extraHeight += VIEWPORT_EXTRA_BOTTOM;
@@ -83,7 +105,8 @@ const getNodeBoundingBox = (node: NodeData) => {
 
     // Prioritize real dimensions if they have been reported by the component,
     // but expand them to include known visual stickouts.
-    if (node.data?.width && node.data?.height && node.data.width > 1 && node.data.height > 1) {
+    const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
+    if (!isPrimitive && node.data?.width && node.data?.height && node.data.width > 1 && node.data.height > 1) {
         const measuredWidth = node.data.width;
         const measuredHeight = node.data.height;
         const adjustedHeight = isWidgetWindow
@@ -116,14 +139,17 @@ const getNodeBoundingBox = (node: NodeData) => {
 
     // Allow partial override from node data even in fallback mode
     if (node.data?.width && node.data.width > 50) width = node.data.width;
-    if (!isLayerSource && node.data?.height && node.data.height > 50) height = node.data.height;
+    const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
+    if (!isLayerSource && node.data?.height && node.data.height > 50 && !isPrimitive) height = node.data.height;
 
     // Generic height adjustment for nodes with ports that don't have special sizing
     const isPanel = node.type === 'panel';
     const isLayerView = node.type === 'layer-view';
     const isNumberSlider = node.type === 'number-slider';
+    const isPrimitive = node.type === 'sphere' || node.type === 'box' || node.type === 'vector-xyz';
     if (!isPanel && !isSeries && !isLayerView && !isNumberSlider && maxPorts > 0) {
-        height = Math.max(height, 140 + (maxPorts * 40));
+        const baseMin = isPrimitive ? 110 : 182;
+        height = Math.max(height, baseMin + (maxPorts * 28));
     }
 
     height += extraHeight;
@@ -182,8 +208,8 @@ export const useGroupLogic = ({
                 const childNodes = prev.filter(n => group.data?.childNodeIds?.includes(n.id));
                 if (childNodes.length === 0) return prev;
 
-                const PADDING = 10;
-                const PADDING_BOTTOM = 10;
+                const PADDING = 20;
+                const PADDING_BOTTOM = 30;
                 const HEADER_HEIGHT = 45;
 
                 const childDimensions = childNodes.map(getNodeBoundingBox);
@@ -205,10 +231,10 @@ export const useGroupLogic = ({
                 const currentY = group.position.y;
 
                 if (
-                    Math.abs(currentWidth - newWidth) < 5 &&
-                    Math.abs(currentHeight - newHeight) < 5 &&
-                    Math.abs(currentX - newX) < 5 &&
-                    Math.abs(currentY - newY) < 5
+                    Math.abs(currentWidth - newWidth) < 1 &&
+                    Math.abs(currentHeight - newHeight) < 1 &&
+                    Math.abs(currentX - newX) < 1 &&
+                    Math.abs(currentY - newY) < 1
                 ) {
                     return prev;
                 }
@@ -245,8 +271,8 @@ export const useGroupLogic = ({
         if (selectedNodes.length < 2) return;
         const resolvedEditorOrigin = groupEditorOrigin ?? selectedNodes[0]?.data?.editorOrigin;
 
-        const PADDING = 10;
-        const PADDING_BOTTOM = 10;
+        const PADDING = 20;
+        const PADDING_BOTTOM = 30;
         const HEADER_HEIGHT = 45;
 
         const childDimensions = selectedNodes.map(getNodeBoundingBox);
@@ -274,7 +300,7 @@ export const useGroupLogic = ({
                 isGroup: true,
                 customName: `Group(${selectedNodes.length})`,
                 childNodeIds: selectedNodes.map(n => n.id),
-              inputs: [],
+                inputs: [],
                 outputs: [],
                 scale: { x: 1, y: 1, z: 1 },
                 rotation: { x: 0, y: 0, z: 0 },

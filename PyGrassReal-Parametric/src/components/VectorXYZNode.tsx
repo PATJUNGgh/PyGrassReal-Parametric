@@ -4,7 +4,7 @@ import type { NodeData, Port } from '../types/NodeTypes';
 import { getNodeDefinition } from '../definitions/nodeDefinitions';
 
 const calculateFallbackHeight = (maxPorts: number): number => {
-    return Math.max(100, 140 + (maxPorts > 0 ? maxPorts * 40 : 0));
+    return Math.max(100, 110 + (maxPorts > 0 ? maxPorts * 28 : 0));
 };
 
 interface VectorXYZNodeProps {
@@ -64,6 +64,7 @@ export const VectorXYZNode: React.FC<VectorXYZNodeProps> = ({
                 icon: node.data.icon,
                 isNameEditable: false,
                 width: node.data.width && node.data.width > 50 ? node.data.width : 300,
+                height: fallbackHeight,
                 hideInputsAdd: true,
                 hideOutputsAdd: true,
                 hidePortControls: true,

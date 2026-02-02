@@ -73,7 +73,6 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
             customName: 'Vecter XYZ',
             icon: 'V3',
             width: 300,
-            height: 260,
             inputs: [
                 { id: 'X', label: 'X component', type: 'Number' },
                 { id: 'Y', label: 'Y component', type: 'Number' },
@@ -385,7 +384,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
         shadow: '20, 184, 166',
         initialData: {
             customName: 'Series',
-            width: 300,
+            width: 260,
             height: 170,
             start: 0,
             step: 1,
@@ -408,7 +407,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
         shadow: '234, 179, 8',
         initialData: {
             customName: 'Inspector',
-            width: 300,
+            width: 340,
             height: 300,
             isPaused: false,
             inputs: [{ id: 'input-main', label: 'Inspector Input' }],
@@ -615,7 +614,3 @@ export const getInitialDataForNode = (type: NodeData['type']): Partial<NodeData[
         ...(definition ? definition.initialData : {}),
     };
 };
-
-
-
-

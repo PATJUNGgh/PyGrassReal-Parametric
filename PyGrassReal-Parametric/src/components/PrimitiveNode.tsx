@@ -5,7 +5,7 @@ import { getNodeDefinition } from '../definitions/nodeDefinitions';
 
 // Helper function to calculate fallback height
 const calculateFallbackHeight = (maxPorts: number): number => {
-    return Math.max(100, 140 + (maxPorts > 0 ? maxPorts * 40 : 0));
+    return Math.max(100, 110 + (maxPorts > 0 ? maxPorts * 28 : 0));
 }
 
 interface PrimitiveNodeProps {
@@ -140,7 +140,7 @@ export const PrimitiveNode: React.FC<PrimitiveNodeProps> = ({
                 icon: node.data.icon, // Set by effect from definition
                 isNameEditable: false,
                 width: node.data.width && node.data.width > 50 ? node.data.width : 300,
-                height: node.data.height && node.data.height > 50 ? node.data.height : fallbackHeight,
+                height: fallbackHeight,
                 onAddInput: handleAddInput,
                 onRemoveInput: handleRemoveInput,
                 onAddOutput: handleAddOutput,
