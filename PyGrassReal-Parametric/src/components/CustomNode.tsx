@@ -29,6 +29,7 @@ interface CustomNodeProps {
         hideInputs?: boolean;
         hideInputsHeader?: boolean;
         hideInputsAdd?: boolean;
+        hideHeader?: boolean;
         hideOutputsHeader?: boolean;
         hidePortLabels?: boolean;
         hideOutputsAdd?: boolean;
@@ -291,21 +292,24 @@ export const CustomNode: React.FC<CustomNodeProps> = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <NodeHeader
-                id={id}
-                customName={customName}
-                isNodePaused={isNodePaused}
-                selected={selected}
-                overlappingGroupId={overlappingGroupId}
-                parentGroupId={parentGroupId}
-                onNameChange={handleNameChange}
-                onTogglePause={handleTogglePause}
-                onDuplicate={onDuplicate}
-                onDelete={onDelete}
-                onJoinGroup={onJoinGroup}
-                onLeaveGroup={onLeaveGroup}
-                onCluster={onCluster}
-            />
+            {!data.hideHeader && (
+                <NodeHeader
+                    id={id}
+                    customName={customName}
+                    isNodePaused={isNodePaused}
+                    selected={selected}
+                    overlappingGroupId={overlappingGroupId}
+                    parentGroupId={parentGroupId}
+                    onNameChange={handleNameChange}
+                    onTogglePause={handleTogglePause}
+                    onDuplicate={onDuplicate}
+                    onDelete={onDelete}
+                    onJoinGroup={onJoinGroup}
+                    onLeaveGroup={onLeaveGroup}
+                    onCluster={onCluster}
+                    hideTitleLabel={data.hideTitleLabel}
+                />
+            )}
 
             <NodeBody
                 id={id}

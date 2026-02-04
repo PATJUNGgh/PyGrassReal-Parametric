@@ -11,7 +11,15 @@ export interface SceneObject {
     scale: [number, number, number];
     customObject?: THREE.Object3D;
     isGhost?: boolean;
+    isFaded?: boolean;
     radius?: number;
+    materialParams?: {
+        roughness?: number;
+        metalness?: number;
+        emissive?: number;
+        transparency?: number;
+    };
+    proxySelectionId?: string;
     // Add any other common properties that all scene objects share
 }
 

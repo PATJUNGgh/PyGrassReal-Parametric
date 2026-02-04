@@ -8,7 +8,9 @@ interface NodeHeaderProps {
     isNodePaused: boolean;
     selected: boolean;
     overlappingGroupId?: string;
+    overlapGroupId?: string;
     parentGroupId?: string;
+    hideTitleLabel?: boolean;
     onNameChange: (newName: string) => void;
     onTogglePause: () => void;
     onDuplicate?: (id: string) => void;
@@ -32,6 +34,7 @@ export const NodeHeader: React.FC<NodeHeaderProps> = ({
     onJoinGroup,
     onLeaveGroup,
     onCluster,
+    hideTitleLabel,
 }) => {
     const [isEditingName, setIsEditingName] = useState(false);
 
@@ -59,9 +62,11 @@ export const NodeHeader: React.FC<NodeHeaderProps> = ({
                     }}
                 >
                     <span style={{ fontSize: '18px' }}>⚙️</span>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff', whiteSpace: 'normal', lineHeight: 1.2 }}>
-                        {customName}
-                    </span>
+                    {!hideTitleLabel && (
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff', whiteSpace: 'normal', lineHeight: 1.2 }}>
+                            {customName}
+                        </span>
+                    )}
                 </div>
             )}
             <NodeActionBar

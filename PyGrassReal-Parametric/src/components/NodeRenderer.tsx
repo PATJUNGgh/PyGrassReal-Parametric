@@ -3,6 +3,7 @@ import { PrimitiveNode } from './PrimitiveNode';
 import { VectorXYZNode } from './VectorXYZNode';
 import { CustomNode } from './CustomNode';
 import { NumberSliderNode } from './NumberSliderNode';
+import { BooleanToggleNode } from './BooleanToggleNode';
 import { SeriesNode } from './SeriesNode';
 import { GroupNode } from './group/GroupNode';
 import { InspectorNode } from './InspectorNode';
@@ -13,6 +14,9 @@ import { NodePromptNode } from './NodePromptNode';
 import { BackgroundColorNode } from './BackgroundColorNode';
 import { ViewportNode } from './ViewportNode';
 import { MeshArrayNode } from './MeshArrayNode';
+import { UnitYNode } from './UnitYNode';
+import { UnitXNode } from './UnitXNode';
+import { UnitZNode } from './UnitZNode';
 import type { NodeData, Connection } from '../types/NodeTypes';
 
 interface NodeRendererProps {
@@ -205,6 +209,8 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
                     return <CustomNode key={node.id} {...commonProps} data={{ ...node.data, hideOutputs: true, isNameEditable: false }} {...interactProps} nodeType={node.type} />;
                 } else if (node.type === 'number-slider') {
                     return <NumberSliderNode key={node.id} {...commonProps} {...interactProps} />;
+                } else if (node.type === 'boolean-toggle') {
+                    return <BooleanToggleNode key={node.id} {...commonProps} {...interactProps} />;
                 } else if (node.type === 'series') {
                     return <SeriesNode key={node.id} {...commonProps} {...interactProps} />;
                 } else if (node.type === 'panel') {
@@ -253,6 +259,57 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
                             {...interactProps}
                             selectedNodeIds={selectedNodeIds}
                             onNodeSelect={(id) => onSelect(id)}
+                        />
+                    );
+                } else if (node.type === 'unit-y') {
+                    return (
+                        <UnitYNode
+                            key={node.id}
+                            node={node}
+                            connections={connections}
+                            onDeleteConnection={onDeleteConnection}
+                            interactionMode={interactionMode}
+                            onDuplicate={onDuplicate}
+                            parentGroupId={parentGroupId}
+                            overlappingGroupId={overlappingGroupId}
+                            onJoinGroup={onJoinGroup}
+                            onLeaveGroup={onLeaveGroup}
+                            onDataChange={onDataChange}
+                            {...commonProps}
+                        />
+                    );
+                } else if (node.type === 'unit-x') {
+                    return (
+                        <UnitXNode
+                            key={node.id}
+                            node={node}
+                            connections={connections}
+                            onDeleteConnection={onDeleteConnection}
+                            interactionMode={interactionMode}
+                            onDuplicate={onDuplicate}
+                            parentGroupId={parentGroupId}
+                            overlappingGroupId={overlappingGroupId}
+                            onJoinGroup={onJoinGroup}
+                            onLeaveGroup={onLeaveGroup}
+                            onDataChange={onDataChange}
+                            {...commonProps}
+                        />
+                    );
+                } else if (node.type === 'unit-z') {
+                    return (
+                        <UnitZNode
+                            key={node.id}
+                            node={node}
+                            connections={connections}
+                            onDeleteConnection={onDeleteConnection}
+                            interactionMode={interactionMode}
+                            onDuplicate={onDuplicate}
+                            parentGroupId={parentGroupId}
+                            overlappingGroupId={overlappingGroupId}
+                            onJoinGroup={onJoinGroup}
+                            onLeaveGroup={onLeaveGroup}
+                            onDataChange={onDataChange}
+                            {...commonProps}
                         />
                     );
                 } else {

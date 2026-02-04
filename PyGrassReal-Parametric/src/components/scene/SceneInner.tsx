@@ -303,10 +303,11 @@ export function SceneInner({
             const mesh = obj as THREE.Mesh;
             if (!mesh.userData?.isSceneObject) return;
 
-            // Resolve current ghost state from Source of Truth
+            // Resolve current ghost/faded state from Source of Truth
             const sceneId = mesh.userData.sceneId;
             const objData = sceneId ? sceneObjectMap.get(sceneId) : null;
             const isGhost = objData ? objData.isGhost : mesh.userData.isGhost;
+            const isFaded = objData ? objData.isFaded : mesh.userData.isFaded;
 
             if (!mesh.material) {
                 mesh.material = new THREE.MeshStandardMaterial({ color: '#ffffff' });
@@ -351,19 +352,34 @@ export function SceneInner({
                     const baseEmissive = originalMaterial?.emissive ?? new THREE.Color('#000000');
                     const baseEmissiveIntensity = typeof mesh.userData.baseEmissiveIntensity === 'number' ? mesh.userData.baseEmissiveIntensity : 0;
 
-                    material.color.set(baseColor);
-                    material.emissive.set(baseEmissive);
-                    material.emissiveIntensity = baseEmissiveIntensity;
+                    const matParams = objData?.materialParams || {};
 
-                    // Respect Ghost visibility from trusted source
+                    material.color.set(baseColor);
+                    material.roughness = matParams.roughness ?? 0.5;
+                    material.metalness = matParams.metalness ?? 0.5;
+
+                    if (matParams.emissive) {
+                        material.emissive.set(baseColor);
+                        material.emissiveIntensity = matParams.emissive * 1.5;
+                    } else {
+                        material.emissive.set(baseEmissive);
+                        material.emissiveIntensity = baseEmissiveIntensity;
+                    }
+
+                    // Respect Ghost/Faded visibility from trusted source
                     if (isGhost) {
                         material.transparent = true;
                         material.opacity = 0;
                         material.depthWrite = false;
+                    } else if (isFaded) {
+                        material.transparent = true;
+                        material.opacity = 0.35;
+                        material.depthWrite = false;
                     } else {
-                        material.transparent = false;
-                        material.opacity = 1;
-                        material.depthWrite = true;
+                        const transparency = matParams.transparency ?? 0;
+                        material.transparent = transparency > 0;
+                        material.opacity = 1 - transparency;
+                        material.depthWrite = transparency < 0.5;
                     }
 
                     materialToApply = material;
@@ -462,21 +478,38 @@ export function SceneInner({
     const lastPointerIdRef = useRef<number | null>(null);
     const hadGumballDragRef = useRef(false);
 
-    useEffect(() => {
-        const controls = transformControlsRef.current;
-        if (!controls) return;
-        const handleDraggingChanged = (event: { value: boolean }) => {
-            setIsGumballDragging(event.value);
-            isDraggingLocal.current = event.value;
-            if (event.value) {
-                // Capture the active object ID at drag start so we can sync even if selection is cleared mid-drag.
-                draggingNodeIdRef.current = firstSelectedAppId ?? (selectedIds.size ? selectedIds.values().next().value : null);
-                hadGumballDragRef.current = true;
-            }
-        };
-        controls.addEventListener?.('dragging-changed', handleDraggingChanged);
-        return () => controls.removeEventListener?.('dragging-changed', handleDraggingChanged);
-    }, [firstSelectedAppId, selectedIds, setIsGumballDragging]);
+    const handleGumballDraggingChanged = useCallback((isDragging: boolean) => {
+        setIsGumballDragging(isDragging);
+        isDraggingLocal.current = isDragging;
+        if (isDragging) {
+            dragJustFinishedRef.current = true;
+            if (gumballTimeoutRef.current) clearTimeout(gumballTimeoutRef.current);
+            gumballHoveredRef.current = true;
+            setIsGumballHovering(true);
+            onInteractionStart?.();
+            draggingNodeIdRef.current = firstSelectedAppId ?? (selectedIds.size ? selectedIds.values().next().value : null);
+            hadGumballDragRef.current = true;
+        } else {
+            if (orbitRef.current) orbitRef.current.enabled = true;
+            setTimeout(() => {
+                dragJustFinishedRef.current = false;
+            }, 200);
+            setIsGumballHovering(false);
+            // onInteractionEnd is now handled in handleGlobalPointerUp to ensure state is updated first
+        }
+    }, [
+        firstSelectedAppId,
+        selectedIds,
+        setIsGumballDragging,
+        dragJustFinishedRef,
+        gumballTimeoutRef,
+        gumballHoveredRef,
+        setIsGumballHovering,
+        onInteractionStart,
+        draggingNodeIdRef,
+        hadGumballDragRef,
+        orbitRef
+    ]);
 
     useEffect(() => {
         setIsHandleHovered(false);
@@ -541,23 +574,7 @@ export function SceneInner({
             )}
             <GumballObserver
                 controlsRef={transformControlsRef}
-                onDraggingChange={(isDragging) => {
-                    setIsGumballDragging(isDragging);
-                    isDraggingLocal.current = isDragging;
-                    if (isDragging) {
-                        dragJustFinishedRef.current = true;
-                        if (gumballTimeoutRef.current) clearTimeout(gumballTimeoutRef.current);
-                        gumballHoveredRef.current = true;
-                        hadGumballDragRef.current = true;
-                        onInteractionStart?.();
-                    } else {
-                        if (orbitRef.current) orbitRef.current.enabled = true;
-                        setTimeout(() => {
-                            dragJustFinishedRef.current = false;
-                        }, 200);
-                        // onInteractionEnd is now handled in handleGlobalPointerUp to ensure state is updated first
-                    }
-                }}
+                onDraggingChange={handleGumballDraggingChanged}
             />
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1} />
@@ -595,12 +612,13 @@ export function SceneInner({
                         ) return;
 
                         const isMultiSelect = e.shiftKey || e.ctrlKey || e.metaKey;
+                        const targetId = obj.proxySelectionId || obj.id;
                         const newSelectedIds = new Set(isMultiSelect ? selectedIds : []);
 
-                        if (isMultiSelect && newSelectedIds.has(obj.id)) {
-                            newSelectedIds.delete(obj.id);
+                        if (isMultiSelect && newSelectedIds.has(targetId)) {
+                            newSelectedIds.delete(targetId);
                         } else {
-                            newSelectedIds.add(obj.id);
+                            newSelectedIds.add(targetId);
                         }
 
                         setSelectedIds(newSelectedIds);
@@ -618,26 +636,6 @@ export function SceneInner({
                             mode="translate"
                             space={selectedIds.size === 1 ? "local" : "world"}
                             size={isGumballHovering ? 1.2 : 1}
-                            onDraggingChanged={(e: { value: boolean }) => {
-                                setIsGumballDragging(e.value);
-                                isDraggingLocal.current = e.value;
-                                if (e.value) {
-                                    if (gumballTimeoutRef.current) clearTimeout(gumballTimeoutRef.current);
-                                    gumballHoveredRef.current = true;
-                                    setIsGumballHovering(true);
-                                    // Capture ID at start of drag
-                                    draggingNodeIdRef.current = firstSelectedAppId ?? (selectedIds.size ? selectedIds.values().next().value : null);
-                                }
-                                if (!e.value) {
-                                    if (orbitRef.current) orbitRef.current.enabled = true;
-                                    dragJustFinishedRef.current = true;
-                                    setTimeout(() => { dragJustFinishedRef.current = false; }, 200);
-
-                                    // Note: We do NOT trigger onTransformChange here anymore.
-                                    // We rely on onMouseUp -> emitSceneTransformChange which uses the captured draggingNodeIdRef.
-                                    // This prevents the race condition where selectedIds is cleared before this event fires.
-                                }
-                            }}
                             onPointerDown={(e: ThreeEvent<PointerEvent>) => {
                                 e.stopPropagation();
                                 if (gumballTimeoutRef.current) clearTimeout(gumballTimeoutRef.current);

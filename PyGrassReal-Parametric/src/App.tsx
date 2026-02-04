@@ -83,7 +83,8 @@ const AppContent = () => {
       ref: boxRef,
       position: [-2, 0.5, 0],
       rotation: [0, 0, 0],
-      scale: [1, 1, 1]
+      scale: [1, 1, 1],
+      isFaded: false
     },
     {
       id: 'sphere-1',
@@ -91,7 +92,8 @@ const AppContent = () => {
       ref: sphereRef,
       position: [2, 0.5, 0],
       rotation: [0, 0, 0],
-      scale: [1, 1, 1]
+      scale: [1, 1, 1],
+      isFaded: false
     }
   ]);
 
@@ -156,7 +158,8 @@ const AppContent = () => {
         ref,
         position: [0, 0.5, 0],
         rotation: [0, 0, 0],
-        scale: [1, 1, 1]
+        scale: [1, 1, 1],
+        isFaded: false
       }
     ]);
   }, []);

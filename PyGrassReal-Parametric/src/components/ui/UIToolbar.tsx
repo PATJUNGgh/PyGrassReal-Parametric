@@ -6,7 +6,7 @@ import type { ActiveDragData } from './DragOverlay'; // Import ActiveDragData
 import './UIToolbar.css';
 
 const NODE_EDITOR_NODES: NodeData['type'][] = [
-    'box', 'sphere', 'vector-xyz', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material', 'text-on-mesh', 'mesh-array', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider', 'series', 'panel'
+    'box', 'sphere', 'vector-xyz', 'unit-x', 'unit-y', 'unit-z', 'boolean-toggle', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material', 'text-on-mesh', 'mesh-array', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider', 'series', 'panel'
 ];
 
 const WIDGET_EDITOR_NODES: NodeData['type'][] = [

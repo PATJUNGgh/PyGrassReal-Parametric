@@ -91,25 +91,7 @@ export const NodeOutputList: React.FC<NodeOutputListProps> = ({
                         onMouseEnter={() => setHoveredPortId(output.id)}
                         onMouseLeave={() => setHoveredPortId(null)}
                     >
-                        {!componentId && !hidePortControls && (
-                            <button
-                                onClick={() => onRemoveOutput(output.id)}
-                                style={{
-                                    marginRight: '4px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    opacity: (selected && hoveredPortId === output.id) ? 1 : 0,
-                                    padding: '6px',
-                                    display: 'flex',
-                                    transition: 'opacity 0.2s',
-                                    pointerEvents: (selected && hoveredPortId === output.id) ? 'auto' : 'none'
-                                }}
-                                title="Remove Output"
-                            >
-                                <X size={12} color="#fff" />
-                            </button>
-                        )}
+
 
                         {!hidePortLabels && (
                             editingPortId === output.id ? (
@@ -174,31 +156,7 @@ export const NodeOutputList: React.FC<NodeOutputListProps> = ({
                                     boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)',
                                 }}
                             />
-                            {!componentId && isConnectedOutput && onDeleteConnection && (
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const connsToDelete = connections.filter(c => c.sourceNodeId === nodeId && c.sourcePort === output.id);
-                                        connsToDelete.forEach(c => onDeleteConnection(c.id));
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '-25px',
-                                        cursor: 'pointer',
-                                        background: '#ff4d4f',
-                                        borderRadius: '50%',
-                                        width: '16px',
-                                        height: '16px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                    }}
-                                    title="Disconnect All"
-                                >
-                                    <X size={10} strokeWidth={3} color="#000" />
-                                </div>
-                            )}
+
                         </div>
                     </div>
                 )

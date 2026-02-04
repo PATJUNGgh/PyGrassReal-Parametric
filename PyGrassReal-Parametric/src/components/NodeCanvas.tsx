@@ -2,14 +2,11 @@ import React, { useState, useRef, useCallback, useEffect, useMemo, useImperative
 import { MagicParticles } from './effects/MagicParticles';
 import { FireEffect } from './effects/FireEffect';
 import { LightningEffect } from './effects/LightningEffect';
-import { GroupButtonOverlay } from './ui/GroupButtonOverlay';
 import { GridBackground } from './GridBackground';
 import { NodeRenderer } from './NodeRenderer';
 import { ConnectionLayer } from './ConnectionLayer';
-import { WireActionMenu } from './ui/WireActionMenu';
-import { NodeSearchBox } from './ui/NodeSearchBox';
 import { SelectionBoxOverlay } from './ui/SelectionBoxOverlay';
-import { MaterialPicker, type MaterialParams } from './MaterialPicker';
+import { CanvasOverlays } from './ui/CanvasOverlays';
 import { useSelection } from '../hooks/useSelection';
 import { useGroupLogic } from '../hooks/useGroupLogic';
 import { useComponentLogic } from '../hooks/useComponentLogic';
@@ -53,6 +50,7 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
     onBackgroundStyleChange,
     sceneObjects = [],
     interactive = true,
+    uiEnabled = true,
     isDraggingNode = false, // Kept for legacy if any, but activeDragNode is primary
     interactionMode = 'node',
     visibleNodeCategory,
@@ -74,6 +72,20 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
         isUndoingRef,
         setNodesRaw // Added setNodesRaw
     } = useNodeGraph();
+
+    const [layoutRevision, setLayoutRevision] = useState(0);
+
+    useEffect(() => {
+        // When the node editor becomes visible, the connection lines might not have
+        // the correct dimensions if their container was previously display: none.
+        // A forced re-render after a timeout ensures that the layout has been
+        // calculated and the wires can draw correctly.
+        if (visibleNodeCategory || newNodeCategory || uiEnabled) {
+            setTimeout(() => {
+                setLayoutRevision(c => c + 1);
+            }, 0); // A minimal timeout is enough to push it to the next render cycle
+        }
+    }, [visibleNodeCategory, newNodeCategory, uiEnabled]);
 
     const canvasRef = useRef<HTMLDivElement>(null);
     const {
@@ -309,7 +321,7 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
                 endAction();
             }, 0);
         }
-    }), [nodes, undo, redo, setScale, setOffset, updateNodeData, startAction, endAction]); // Added updateNodeData to dependenciesNodeData]);
+    }), [nodes, undo, redo, setScale, setOffset, updateNodeData, startAction, endAction]); // Added updateNodeData to dependencies
 
     // --- End of Refactored Hooks Block ---
 
@@ -325,6 +337,9 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
     }, [endAction]);
 
     useEffect(() => {
+        // TODO: This is a defensive cleanup for a bug causing duplicate nodes.
+        // This is inefficient as it runs on every node update (e.g., dragging).
+        // The root cause of duplicate node creation should be investigated and fixed.
         const map = new Map<string, NodeData>();
         let hasDuplicate = false;
         nodes.forEach((node) => {
@@ -523,6 +538,11 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
         return { x: sumX / count, y: sumY / count };
     }, [connections, selectedConnectionIds, getPortPosition]);
 
+    const editingNodeForMaterial = useMemo(() => {
+        if (!editingMaterialNodeId) return null;
+        return filteredNodes.find(n => n.id === editingMaterialNodeId);
+    }, [editingMaterialNodeId, filteredNodes]);
+
     return (
         <div
             ref={canvasRef}
@@ -631,90 +651,28 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
                 offset={offset}
             />
 
-            {/* Floating Wire Action Menu */}
-            {/* Floating Wire Action Menu (Animated) */}
-            <WireActionMenu
-                visible={selectedConnectionIds.size > 0 && interactionMode === 'wire'}
-                center={getSelectedWiresCenter()}
-                onDelete={handleDeleteWires}
-                onToggleStyle={handleToggleWireStyle}
+            <CanvasOverlays
+                scale={scale}
+                offset={offset}
+                interactionMode={interactionMode}
+                selectedConnectionIds={selectedConnectionIds}
+                getSelectedWiresCenter={getSelectedWiresCenter}
+                handleDeleteWires={handleDeleteWires}
+                handleToggleWireStyle={handleToggleWireStyle}
+                showGroupButton={showGroupButton}
+                isInvalidGroupSelection={isInvalidGroupSelection}
+                groupButtonProps={groupButtonProps}
+                isGroupButtonExiting={isGroupButtonExiting}
+                createGroupNode={createGroupNode}
+                editingNodeForMaterial={editingNodeForMaterial}
+                editingMaterialNodeId={editingMaterialNodeId}
+                closeMaterialEditor={closeMaterialEditor}
+                updateNodeData={updateNodeData}
+                searchBoxVisible={searchBoxVisible}
+                searchBoxPos={searchBoxPos}
+                addNode={addNode}
+                hideSearchBox={hideSearchBox}
             />
-
-            {
-                showGroupButton && !isInvalidGroupSelection && (
-                    <GroupButtonOverlay
-                        count={groupButtonProps.count}
-                        centerX={groupButtonProps.centerX}
-                        buttonY={groupButtonProps.buttonY}
-                        scale={scale}
-                        offset={offset}
-                        isExiting={isGroupButtonExiting}
-                        onClick={() => {
-                            createGroupNode();
-                        }}
-                    />
-                )
-            }
-
-            {/* Material Picker Modal */}
-            {editingMaterialNodeId && (
-                (() => {
-                    const node = filteredNodes.find(n => n.id === editingMaterialNodeId);
-                    if (!node) return null;
-                    return (
-                        <MaterialPicker
-                            initialStyle={node.data.materialStyle || node.data.style}
-                            initialUrl={node.data.materialPreviewUrl}
-                            initialParams={node.data.materialParams}
-                            onClose={closeMaterialEditor}
-                            onApply={(data) => {
-                                updateNodeData(editingMaterialNodeId, {
-                                    materialStyle: data.style,
-                                    materialPreviewUrl: data.url,
-                                    materialParams: data.params,
-                                    style: data.style // also update style for backward compatibility or direct use
-                                });
-                                closeMaterialEditor();
-                            }}
-                        />
-                    );
-                })()
-            )}
-
-            {/* Node Search Box */}
-            {
-                searchBoxVisible && (
-                    <NodeSearchBox
-                        x={searchBoxPos.x}
-                        y={searchBoxPos.y}
-                        onSelect={(type) => {
-                            addNode(type, {
-                                x: (searchBoxPos.x - offset.x) / scale,
-                                y: (searchBoxPos.y - offset.y) / scale
-                            });
-                            hideSearchBox();
-                        }}
-                        onClose={hideSearchBox}
-                    />
-                )
-            }
-
-            {/* Scale Indicator */}
-            <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                right: '10px',
-                background: 'rgba(0, 0, 0, 0.7)',
-                color: '#fff',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                zIndex: 10,
-                pointerEvents: 'none',
-            }}>
-                {Math.round(scale * 100)}%
-            </div>
         </div >
     );
 });

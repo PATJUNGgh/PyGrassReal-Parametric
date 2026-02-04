@@ -162,7 +162,7 @@ export const useNodeOperations = ({
             y: nodeToDuplicate.position.y + 50
         };
 
-        // Ensure scene-linked nodes point to their own scene object after duplication.
+        // Remove scene-linked reference during duplication.
         if (newNode.type === 'box' || newNode.type === 'sphere') {
             newNode.data = {
                 ...newNode.data,
@@ -171,11 +171,6 @@ export const useNodeOperations = ({
         } else if (newNode.data?.sceneObjectId) {
             const { sceneObjectId, ...restData } = newNode.data;
             newNode.data = restData;
-        }
-
-        // Add a "(Copy)" suffix to the name for better UX, if it has a name.
-        if (newNode.data.customName) {
-            newNode.data.customName = `${newNode.data.customName} (Copy)`;
         }
 
         setNodesWithHistory(prev => [...prev, newNode]);

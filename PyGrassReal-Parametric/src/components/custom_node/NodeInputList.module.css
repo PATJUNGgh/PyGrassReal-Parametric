@@ -1,0 +1,86 @@
+.nodeInputListContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    min-width: 0;
+}
+
+.nodeInputListItem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 0;
+    width: calc(100% + 15px);
+    margin-right: -15px;
+    background: rgba(255,255,255,0.001);
+    cursor: default;
+}
+
+.nodePortContainer {
+    position: absolute;
+    left: -32px;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+}
+
+.nodePort {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #22c55e; /* green-500 */
+    border: 2px solid #ffffff;
+    cursor: crosshair;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); /* green-500 with alpha */
+}
+
+.portLabelEditContainer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.portLabelInput {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 4px;
+    width: 80px;
+    outline: none;
+}
+
+.portLabelEditButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.portLabel {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+}
+
+.addInputButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-top: 4px;
+    width: fit-content;
+    margin-left: -2px;
+}

@@ -7,7 +7,7 @@ export interface Port {
 
 export interface NodeData {
     id: string;
-    type: 'box' | 'sphere' | 'vector-xyz' | 'mesh-union' | 'mesh-difference' | 'mesh-intersection' | 'model-material' | 'text-on-mesh' | 'mesh-array' | 'mesh-eval' | 'face-normals' | 'custom' | 'antivirus' | 'input' | 'output' | 'number-slider' | 'series' | 'group' | 'component' | 'panel' | 'widget-window' | 'layer-source' | 'layer-view' | 'layer-bridge' | 'node-prompt' | 'background-color' | 'viewport';
+    type: 'box' | 'sphere' | 'vector-xyz' | 'mesh-union' | 'mesh-difference' | 'mesh-intersection' | 'model-material' | 'text-on-mesh' | 'mesh-array' | 'mesh-eval' | 'face-normals' | 'custom' | 'antivirus' | 'input' | 'output' | 'number-slider' | 'boolean-toggle' | 'series' | 'group' | 'component' | 'panel' | 'widget-window' | 'layer-source' | 'layer-view' | 'layer-bridge' | 'node-prompt' | 'background-color' | 'viewport';
     position: { x: number; y: number };
     data: {
         width?: number;
@@ -24,7 +24,7 @@ export interface NodeData {
         min?: number;
         max?: number;
         step?: number;
-        value?: number;
+        value?: number | boolean;
         start?: number;
         count?: number;
         series?: number[];
@@ -37,6 +37,8 @@ export interface NodeData {
         hideInputsHeader?: boolean;
         hideOutputs?: boolean;
         hideOutputsHeader?: boolean;
+        hideHeader?: boolean;
+        hideTitleLabel?: boolean;
         hidePortControls?: boolean;
         hidePortLabels?: boolean;
         hideModifierMenu?: boolean;

@@ -145,44 +145,6 @@ export const NodePortItem: React.FC<PortItemProps> = ({
                 alignItems: 'center',
                 zIndex: 100
             }}>
-                {!hideDisconnectButton && !componentId && isConnected && onDeleteConnection && interactionMode === 'wire' && (
-                    <div
-                        onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }}
-                        onPointerDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (isInput) {
-                                const connToDelete = connections.find(c => c.targetNodeId === nodeId && c.targetPort === port.id);
-                                if (connToDelete) onDeleteConnection(connToDelete.id);
-                            } else {
-                                const connsToDelete = connections.filter(c => c.sourceNodeId === nodeId && c.sourcePort === port.id);
-                                connsToDelete.forEach(c => onDeleteConnection(c.id));
-                            }
-                        }}
-                        style={{
-                            position: 'absolute',
-                            cursor: 'pointer',
-                            borderRadius: '50%',
-                            width: '16px',
-                            height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                            ...disconnectButtonStyles,
-                        }}
-                        title={isInput ? "Disconnect" : "Disconnect All"}
-                    >
-                        <X size={10} strokeWidth={3} />
-                    </div>
-                )}
                 <div
                     id={`port-${nodeId}-${port.id}`}
                     className="node-port"
@@ -292,9 +254,6 @@ export const NodePortItem: React.FC<PortItemProps> = ({
                         marginRight: isInput ? 0 : '6px',
                         order: isInput ? 2 : -2,
                     }}>
-                        {!isInput && !componentId && hoveredPortId === port.id && !editingPortId && (
-                            <button onClick={() => onRemovePort(port.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.5, padding: '2px', display: 'flex' }}><X size={12} color="#fff" /></button>
-                        )}
                         {hoveredPortId !== port.id && portModifiers[port.id]?.length > 0 && (
                             <div style={{ display: 'flex', gap: '1px' }}>
                                 {portModifiers[port.id].map((modifier) => (
@@ -339,10 +298,7 @@ export const NodePortItem: React.FC<PortItemProps> = ({
                                 )}
                             </div>
                         )}
-                        {isInput && !componentId && hoveredPortId === port.id && (
-                            <button onClick={() => onRemovePort(port.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.5, padding: '2px', display: 'flex' }}><X size={12} color="#fff" /></button>
-                        )}
-                    </div>
+                        </div>
                 )}
             </div>
         </div>

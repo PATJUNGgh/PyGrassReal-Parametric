@@ -7,7 +7,8 @@ export function updateMarchingCubesField(
     sdf: (x: number, y: number, z: number) => number,
     bounds: THREE.Box3,
     resolution: number,
-    worldMatrix?: THREE.Matrix4
+    worldMatrix?: THREE.Matrix4,
+    colorFn?: (x: number, y: number, z: number) => { r: number, g: number, b: number }
 ) {
     if (mc.resolution !== resolution) {
         mc.init(resolution);
@@ -54,6 +55,14 @@ export function updateMarchingCubesField(
                 const val = -d; // Inside = positive
 
                 field[idx] = val;
+
+                if (mc.enableColors && colorFn && mc.palette) {
+                    const col = colorFn(worldP.x, worldP.y, worldP.z);
+                    mc.palette[idx * 3] = col.r;
+                    mc.palette[idx * 3 + 1] = col.g;
+                    mc.palette[idx * 3 + 2] = col.b;
+                }
+
                 idx++;
             }
         }

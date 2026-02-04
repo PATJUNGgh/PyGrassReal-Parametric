@@ -4,23 +4,32 @@ This document provides a detailed summary of the `CustomNode` React component. T
 
 ## Overview
 
-`CustomNode` is a functional React component that serves as the visual representation of a node on a canvas. It is highly configurable through props and is designed to handle a wide variety of states and interactions, including:
+`CustomNode` is a functional React component that serves as the main visual representation of a node on a canvas. It is highly configurable through props and has been refactored into a compositional structure, using several sub-components to handle specific parts of its functionality.
 
-*   Dragging and resizing.
-*   Selection and hover states.
-*   Dynamic styling based on themes and states (e.g., `paused`, `infected`).
-*   Editable titles and configurable icons.
-*   Dynamic input and output ports for creating connections.
-*   Conditional rendering of internal content, which can be standard ports, a `LayerPanel` widget, a 3D `MaterialPreviewSphere`, or custom child components.
-*   Context-sensitive UI elements like menus and group management buttons.
+The component's core responsibilities include:
+*   Acting as a container that orchestrates the `NodeHeader`, `NodeBody`, and other UI elements.
+*   Handling top-level user interactions like dragging, selecting, and hover states.
+*   Applying dynamic styling based on states like `selected`, `isPaused`, and `isInfected`.
+*   Managing the node's position and size through the `useNodeDragV2` and `useNodeResizeV2` hooks.
 
-It uses custom hooks (`useNodeDrag`, `useNodeResize`) to manage complex user interactions and a combination of CSS classes and inline styles for its appearance.
+This refactoring makes the main component a cleaner wrapper, delegating rendering and logic to specialized children.
+
+## Component Composition
+
+The `CustomNode` is composed of the following key sub-components:
+
+*   **`NodeHeader`**: Renders the top part of the node, including the title, pause/resume button, duplicate button, delete button, and group-related actions. It also handles the logic for editing the node's name.
+*   **`NodeBody`**: Renders the main content area of the node. This area is highly versatile and can display:
+    *   Lists of input and output ports.
+    *   A 3D material preview (`MaterialPreviewSphere`).
+    *   Any custom `children` passed to the `CustomNode`.
+    It also manages all interactions related to ports (adding, removing, editing, connecting).
+*   **`NodeErrorOverlay`**: Displays a prominent error/alert message over the node when the `isInfected` prop is true.
+*   **`NodeResizeHandle`**: Renders the handle that allows users to resize the node's width and encapsulates the `onMouseDown` logic to initiate resizing.
 
 ## Props (`CustomNodeProps`)
 
 The component accepts a large number of props to control its appearance and behavior.
-
-### Core Props
 
 | Prop                 | Type                               | Description                                                                                             |
 | -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -30,31 +39,24 @@ The component accepts a large number of props to control its appearance and beha
 | `selected`           | `boolean`                          | If `true`, the node is rendered in a "selected" state.                                                  |
 | `onPositionChange`   | `(id, pos) => void`                | Callback invoked when the node's position changes.                                                      |
 | `onDataChange`       | `(id, data) => void`               | Callback to update the node's `data` object.                                                            |
-| `onDelete`           | `(id) => void`                     | Callback invoked when the user clicks the delete button.                                                |
-| `onDuplicate`        | `(id) => void`                     | Callback for duplicating the node via the header menu.                                                  |
-| `children`           | `React.ReactNode`                  | Optional. Renders custom content inside the node body, replacing the default port lists.                |
-
-### Interaction & Connection Props
-
-| Prop                 | Type                               | Description                                                                                             |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `onDelete`           | `(id) => void`                     | Callback invoked to delete the node.                                                                    |
+| `onDuplicate`        | `(id) => void`                     | Callback for duplicating the node.                                                                      |
+| `children`           | `React.ReactNode`                  | Optional. Renders custom content inside the `NodeBody`, replacing the default port lists.               |
 | `onConnectionStart`  | `(nodeId, portId, pos) => void`    | Triggered when a user starts dragging a connection from a port.                                         |
 | `onConnectionComplete`| `(nodeId, portId) => void`         | Triggered when a user completes a connection.                                                           |
-| `connections`        | `Array<Connection>`                | An array of all connections on the canvas.                                                              |
+| `connections`        | `Array<Connection>`                | An array of all connections on the canvas, passed down to the `NodeBody`.                               |
 | `onDeleteConnection` | `(connectionId) => void`           | Callback for deleting a connection.                                                                     |
-| `interactionMode`    | `'node' \| '3d' \| 'wire'`         | The global interaction mode, passed to child components.                                                |
-| `scale`              | `number`                           | The current zoom level of the canvas.                                                                   |
-
-### State & Grouping Props
-
-| Prop                 | Type                               | Description                                                                                             |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `scale`              | `number`                           | The current zoom level of the canvas, used by interaction hooks.                                        |
+| `onSelect`           | `() => void`                       | Callback invoked when the node is clicked to mark it as selected.                                       |
 | `isShaking`          | `boolean`                          | If `true`, applies a shaking animation.                                                                 |
 | `isInfected`         | `boolean`                          | If `true`, the node enters a red "infected" alert state.                                                |
 | `parentGroupId`      | `string`                           | The ID of the group this node belongs to.                                                               |
 | `overlappingGroupId` | `string`                           | The ID of a group the node is being dragged over.                                                       |
 | `onJoinGroup`        | `(nodeId, groupId) => void`        | Callback for joining a group.                                                                           |
 | `onLeaveGroup`       | `(nodeId) => void`                 | Callback for leaving a group.                                                                           |
+| `onCluster`          | `(nodeId) => void`                 | Callback to trigger component creation from the node.                                                   |
+| `onEditMaterial`     | `(id) => void`                     | Callback when the user intends to edit the material.                                                    |
+| `nodeType`           | `string`                           | A string identifier for the node's type, used to control certain behaviors like port editing.           |
 
 ### Data Object Props (`data`)
 
@@ -62,65 +64,48 @@ The `data` prop is a flexible object that fine-tunes the node's specific feature
 
 *   `customName`: The display name of the node.
 *   `inputs`, `outputs`: Arrays of `Port` objects defining connection points.
-*   `isPaused`: If `true`, the node is rendered in a grayed-out "paused" state.
-*   `isNameEditable`: If `false`, the node's name cannot be changed.
-*   `resizable`: If `true`, a resize handle is shown.
-*   `icon`: An emoji or character to display next to the node name.
-*   `theme`: Applies a specific visual theme (`'default'`, `'antivirus'`, `'layer-source'`).
-*   **Visibility Toggles**: A set of boolean props to hide parts of the UI (e.g., `hideInputs`, `hideOutputsAdd`, `hidePortControls`).
-*   **Layer Panel**: Props like `showLayerPanel`, `layersData`, and `onLayer...` callbacks are used when the node functions as a layer management widget.
-*   **Material Preview**: `showMaterialPreview`, `materialPreviewStyle`, `materialPreviewUrl`, and `materialParams` are used to display a 3D material preview sphere and manage its properties.
+*   `width`, `minWidth`, `height`: Sizing parameters for the node.
+*   `resizable`: If `true`, the `NodeResizeHandle` is shown.
+*   `isPaused`: If `true`, the node is rendered in a grayed-out, non-interactive "paused" state.
+*   `componentId`: A string indicating the node is an instance of a reusable component.
+*   `showMaterialPreview`: If `true`, the `NodeBody` displays the 3D material preview.
+*   `materialParams`: The parameters for the `MaterialPreviewSphere`.
+*   **Visibility Toggles**: A set of boolean props to hide parts of the UI (e.g., `hideInputs`, `hideInputsAdd`, `hidePortControls`).
 
 ## Internal State
 
-*   `isEditingName`: Toggles the header title between a `<span>` and an `<input>`.
-*   `isHovered`, `isMenuOpen`: Manage the visibility of the header menu on hover.
-*   `showErrorDetails`: Controls the visibility of the "Security Alert" modal when `isInfected` is `true`.
-*   `showMaterialPicker`: Toggles the `MaterialPicker` modal, which is rendered in a portal.
+*   `showErrorDetails`: Controls the visibility of the modal within the `NodeErrorOverlay`.
+*   `isHovered`: Tracks mouse hover state on the node's container div.
+*   `hoveredPortId`, `editingPortId`, `tempPortLabel`: State managed within `CustomNode` and passed down to `NodeBody` to control port-specific interactions like hover effects and inline label editing.
 *   `hasMounted`: A flag to trigger a one-time mount animation.
-*   Port editing state (`editingPortId`, `editingPortValue`) is managed for port label modifications.
 
 ## Custom Hooks
 
-*   **`useNodeDrag`**: Encapsulates the logic for dragging the node.
-*   **`useNodeResize`**: Handles logic for resizing the node's width via a handle.
+*   **`useNodeDragV2`**: Encapsulates the logic for dragging the node. It takes the initial position, scale, and an `onPositionChange` callback, and returns a `handleMouseDown` function to be attached to the draggable element.
+*   **`useNodeResizeV2`**: Handles logic for resizing the node's width. It manages the interaction state and calculates the new width and position, calling `onDataChange` and `onPositionChange` with the updated values.
 
 ## Core Logic & Functionality
 
-### 1. Dynamic Styling (`computeNodeStyle`)
+### 1. Drag and Resize
 
-A helper function `computeNodeStyle` dynamically generates the `className` string and inline `style` object for the node's root element. It combines base classes with state-dependent classes for selection (`.custom-node-selected`), theme (`.custom-node-antivirus`), and status (`.custom-node-paused`, `.custom-node-infected`). It also applies animations for mounting, shaking, and alerts. Inline styles are used for position (`left`, `top`), `width`, and `zIndex`.
+The core drag and resize functionality is almost entirely handled by the `useNodeDragV2` and `useNodeResizeV2` hooks. The main `CustomNode` component simply invokes these hooks and attaches the returned `handleMouseDown` functions to the main `div` and the `NodeResizeHandle` component, respectively. This keeps the main component clean and focused on composition.
 
-### 2. Sizing and Layout
+### 2. Event Handling and Propagation
 
-The node's width is calculated dynamically based on its content, including the length of its name and port labels, to ensure content fits correctly. The width can also be overridden by `data.width` and is user-resizable if `data.resizable` is true.
+The root `div` of the component has `onMouseDown`, `onClick`, and `onContextMenu` handlers. These handlers call `e.stopPropagation()` to prevent events from bubbling up to the main canvas. This is crucial for ensuring that clicking or dragging a node doesn't also trigger canvas-level interactions like the selection box. The `onMouseDown` handler is responsible for both selecting the node (via `onSelect`) and initiating a drag (via `handleDragMouseDown`).
 
-### 3. Header and Interactions
+### 3. Dynamic Styling
 
-The header contains:
-*   An **icon** and an **editable name**.
-*   A **delete button**.
-*   A **menu button** that appears on hover, revealing a popup menu with actions like "Duplicate", "Stop/Resume", and "Info".
-*   Contextual **grouping buttons** ("Join Group" or "Leave Group") appear based on the node's position relative to groups.
+A large `containerStyle` object is created to apply styles dynamically. This object changes based on several props and states:
+*   **Position**: `left` and `top` are set from `props.position`.
+*   **Size**: `width` is derived from `data.width` or calculated based on its name length.
+*   **State**: The `background`, `border`, `boxShadow`, and `animation` properties all change dramatically based on whether `isInfected` or `selected` are true.
+*   **Interaction**: The `cursor` style changes based on `isDragging` and `isNodePaused`.
+*   **Paused**: A grayscale `filter` and reduced `opacity` are applied if `isNodePaused` is true.
 
-### 4. Conditional Body Content
+### 4. Data Flow
 
-The body of the node is highly modular and renders different content based on props:
-1.  **Default Port View**: Renders `NodePortList` components for inputs and outputs.
-2.  **Layer Panel View**: If `data.showLayerPanel` is `true`, it renders the `LayerPanel` component.
-3.  **Material Preview**: If `data.showMaterialPreview` is `true`, it displays a `MaterialPreviewSphere`. Clicking this sphere opens the `MaterialPicker` modal.
-4.  **Custom Children**: If `children` are passed as a prop, they are rendered in the body. This allows for creating specialized nodes like sliders or other widgets.
-
-### 5. Material Editor Integration
-
-A key feature is the ability to edit 3D material properties.
-*   When enabled, a `MaterialPreviewSphere` (a small `react-three-fiber` canvas) is shown in the node body for instant visual feedback.
-*   Clicking the sphere opens the `MaterialPicker` modal (via a React Portal).
-*   Changes made in the picker are applied back to the node's `data` via the `onDataChange` callback, updating the preview and any connected 3D scene elements.
-
-### 6. Event Handling
-
-The component uses `e.stopPropagation()` extensively on its internal interactive elements (buttons, inputs) to prevent unwanted side effects like dragging the node when clicking a button. Callbacks like `onSelect`, `onDelete`, and connection handlers connect the node's UI to the parent canvas logic.
+The component follows a strict controlled-component pattern. It receives its state (`data`, `position`) via props. Whenever a user interaction requires a state change (e.g., renaming the node, adding a port, pausing), the relevant sub-component calls a callback prop (like `onDataChange` or `onPositionChange`), which updates the state in the parent component. This ensures a unidirectional data flow and a single source of truth.
 ---
 
 # Component Analysis: `group/GroupNode.tsx`

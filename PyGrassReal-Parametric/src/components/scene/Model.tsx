@@ -21,24 +21,45 @@ export const Model = React.forwardRef<Mesh, ModelProps>(({ data, isSelected, hig
     const meshRef = useRef<Mesh>(null);
     const [hovered, setHovered] = React.useState(false);
 
-    useImperativeHandle(ref, () => meshRef.current as Mesh, []);
+    const isFaded = data.isFaded;
+    const matParams = data.materialParams || {};
 
+    // Unified material properties, excluding transient states like 'hovered'
+    const baseMaterialProps = {
+        color: resolvedColor,
+        roughness: matParams.roughness ?? 0.5,
+        metalness: matParams.metalness ?? 0.5,
+        emissive: (highlight && !data.isGhost) ? '#38bdf8' : (matParams.emissive ? resolvedColor : '#000000'),
+        emissiveIntensity: (highlight && !data.isGhost) ? 0.6 : (matParams.emissive ? matParams.emissive * 1.5 : 0),
+        transparent: data.isGhost || isFaded || (matParams.transparency !== undefined && matParams.transparency > 0),
+        opacity: data.isGhost
+            ? 0.0 // Base opacity for a ghost is 0, hover/selection state is handled in render
+            : (isFaded ? 0.35 : (matParams.transparency !== undefined ? 1 - matParams.transparency : 1)),
+    };
+    
     useEffect(() => {
         const mesh = meshRef.current;
         if (!mesh) return;
-        const baseMaterial = new MeshStandardMaterial({
-            color: resolvedColor,
-            roughness: 0.5,
-            metalness: 0.5,
-            emissive: highlight ? '#38bdf8' : '#000000',
-            emissiveIntensity: highlight ? 0.6 : 0
-        });
+
+        // Create a "base" material for SceneInner to use, without transient hover state
+        const baseMaterial = new MeshStandardMaterial(baseMaterialProps);
+        
         mesh.userData.baseMaterial = baseMaterial;
-        mesh.userData.baseColor = resolvedColor;
-        mesh.userData.baseEmissive = highlight ? '#38bdf8' : '#000000';
-        mesh.userData.baseEmissiveIntensity = highlight ? 0.6 : 0;
         mesh.userData.isGhost = data.isGhost;
-    }, [resolvedColor, highlight, data.isGhost]);
+        // This is still read by SceneInner, so we keep it but ensure it uses the unified logic
+        mesh.userData.baseEmissiveIntensity = baseMaterialProps.emissiveIntensity;
+
+    }, [resolvedColor, highlight, data.isGhost, isFaded, matParams]);
+
+    // Final material props for render, including transient states like 'hovered'
+    const materialProps = {
+        ...baseMaterialProps,
+        opacity: data.isGhost
+            ? ((hovered || isSelected) ? 0.2 : 0.0) // Override opacity for ghost hover/selection
+            : baseMaterialProps.opacity,
+    };
+
+    useImperativeHandle(ref, () => meshRef.current as Mesh, []);
 
     const meshProps = {
         onPointerDown: (e: any) => {
@@ -65,27 +86,16 @@ export const Model = React.forwardRef<Mesh, ModelProps>(({ data, isSelected, hig
         userData: { isSceneObject: true, sceneId: data.id } // Embed ID for SceneInner lookup
     };
 
-    const materialProps = {
-        color: resolvedColor,
-        roughness: 0.5,
-        metalness: 0.5,
-        emissive: (highlight && !data.isGhost) ? '#38bdf8' : '#000000',
-        emissiveIntensity: (highlight && !data.isGhost) ? 0.6 : 0,
-        transparent: data.isGhost,
-        opacity: data.isGhost ? ((hovered || isSelected) ? 0.2 : 0.0) : 1,
-    };
-
     if (type === 'box') {
         const rawRadius = data.radius || 0;
         // Clamp radius to max 0.5 (half of box size 1x1x1)
         const radius = Math.min(rawRadius, 0.5);
+        
         if (radius > 0) {
             return (
-                <mesh {...meshProps}>
-                    <RoundedBox args={[1, 1, 1]} radius={radius} smoothness={4}>
-                        <meshStandardMaterial {...materialProps} />
-                    </RoundedBox>
-                </mesh>
+                <RoundedBox {...meshProps} args={[1, 1, 1]} radius={radius} smoothness={4}>
+                    <meshStandardMaterial {...materialProps} />
+                </RoundedBox>
             );
         }
         return (
@@ -97,12 +107,16 @@ export const Model = React.forwardRef<Mesh, ModelProps>(({ data, isSelected, hig
     }
 
     if (data.customObject) {
+        // Sync visibility and ghost state to the raw THREE object
+        data.customObject.visible = !data.isGhost;
+
         return (
             <primitive
                 object={data.customObject}
                 ref={meshRef}
                 userData={{ isSceneObject: true }}
-                raycast={() => null}
+                raycast={data.isGhost ? (() => null) : undefined}
+                onPointerDown={meshProps.onPointerDown}
             />
         );
     }
