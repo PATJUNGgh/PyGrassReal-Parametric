@@ -1,0 +1,118 @@
+.model-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  pointer-events: auto; /* Ensure it's interactive */
+}
+
+.model-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--dash-surface-soft);
+  border: 1px solid var(--dash-line);
+  border-radius: 20px;
+  padding: 2px 6px 2px 8px;
+  cursor: pointer;
+  color: var(--dash-text-soft);
+  font-size: 0.6rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.model-dropdown-trigger:hover {
+  background: var(--dash-surface-strong);
+  border-color: var(--dash-accent-blue);
+  color: var(--dash-text);
+}
+
+.model-dropdown-trigger.open {
+  background: var(--dash-surface-strong);
+  border-color: var(--dash-accent-blue);
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.model-dropdown-menu {
+  position: absolute;
+  min-width: 140px;
+  background: var(--dash-surface-strong);
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  z-index: 1000; /* Increased from 100 */
+  pointer-events: auto; /* Explicitly allow interactions */
+}
+
+.model-dropdown-wrapper.is-up .model-dropdown-menu {
+  bottom: calc(100% + 8px);
+  left: 0;
+  animation: slideUp 0.2s ease-out;
+}
+
+.model-dropdown-wrapper.is-down .model-dropdown-menu {
+  top: calc(100% + 8px);
+  right: 0;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.model-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--dash-text-soft);
+  font-size: 0.6rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  pointer-events: auto; /* Ensure individual options are clickable */
+}
+
+.model-option:hover {
+  background: var(--dash-surface-soft);
+  color: var(--dash-text);
+}
+
+.model-option.active {
+  background: rgba(125, 211, 252, 0.1);
+  color: var(--dash-accent-blue);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

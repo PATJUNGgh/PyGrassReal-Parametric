@@ -1,0 +1,126 @@
+.chat-page-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Force hide the main dashboard scrollbar and remove padding when viewing the chat page */
+.dashboard-main:has(.chat-page-root) {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* When sidebar is collapsed, reclaim its 50px column for full-width chat centering. */
+.dashboard-root.is-sidebar-closed .dashboard-main:has(.chat-page-root) {
+  margin-left: -50px !important;
+  width: calc(100% + 50px);
+}
+
+.chat-header-container {
+  position: relative;
+  padding: 12px 24px 0 24px;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+/* Keep header controls clear of the collapse button when chat is width-compensated. */
+.dashboard-root.is-sidebar-closed .chat-header-container {
+  padding-left: calc(24px + 50px);
+}
+
+.chat-composer-sticky {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 1rem;
+  pointer-events: none;
+  /* Allow scrolling content underneath */
+  z-index: 20;
+}
+
+.chat-composer-sticky>* {
+  pointer-events: auto;
+  /* Enable interaction for the composer itself */
+}
+
+.chat-composer-sticky.centered {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.chat-composer-sticky.bottom {
+  top: auto;
+  bottom: 0px;
+  transform: translateY(0);
+  background: transparent;
+  padding-bottom: 4px;
+  padding-top: 48px;
+  pointer-events: none;
+}
+
+.chat-composer-sticky.bottom::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top,
+      var(--dash-bg-1) 0%,
+      var(--dash-bg-1) 50%,
+      rgba(13, 20, 26, 0.2) 80%,
+      transparent 100%);
+  backdrop-filter: blur(8px);
+  -webkit-mask-image: linear-gradient(to top, black 0%, black 60%, transparent 100%);
+  mask-image: linear-gradient(to top, black 0%, black 60%, transparent 100%);
+  z-index: -1;
+}
+
+.chat-composer-sticky.bottom>* {
+  pointer-events: auto;
+  /* Ensure the composer child itself is interactive */
+}
+
+@media (max-width: 768px) {
+  .dashboard-root.is-sidebar-closed .dashboard-main:has(.chat-page-root) {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .chat-page-root {
+    height: 100%;
+    margin: 0;
+  }
+
+  .chat-header-container {
+    /* จองพื้นที่ 68px ให้กับส่วนบน เพื่อไม่ให้ล้นทับข้อความ */
+    height: 68px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .chat-header-container .dashboard-content-header {
+    /* ล็อคตำแหน่งให้เป๊ะตายตัวกับหน้าจอเหมือนปุ่ม Hamburger */
+    position: fixed;
+    top: 12px;
+    left: 68px;
+    /* หลังจาก 12px (left padding) + 44px (trigger width) + 12px (gap) */
+    right: 12px;
+    height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    z-index: 999;
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-header-container {
+    padding: 0;
+  }
+}

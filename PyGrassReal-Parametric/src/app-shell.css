@@ -1,0 +1,136 @@
+.app-route-layer {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 200000;
+  display: none !important;
+  /* none !important; */
+  /*flex;*/
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.app-route-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.4);
+  font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  pointer-events: auto;
+}
+
+.app-route-switcher button {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.82);
+  color: rgba(226, 232, 240, 0.9);
+  height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.app-route-switcher .app-route-hide {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.app-route-switcher button:hover {
+  border-color: rgba(45, 212, 191, 0.56);
+  transform: translateY(-1px);
+}
+
+.app-route-switcher button.is-active {
+  border-color: rgba(45, 212, 191, 0.62);
+  background: linear-gradient(120deg, rgba(20, 184, 166, 0.35), rgba(15, 118, 110, 0.3));
+  color: #f8fafc;
+}
+
+.app-auth-chip {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 999px;
+  padding: 0 10px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.76rem;
+  color: rgba(226, 232, 240, 0.86);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.app-auth-chip.is-authenticated {
+  border-color: rgba(45, 212, 191, 0.48);
+  color: #ccfbf1;
+}
+
+.app-route-reveal {
+  pointer-events: auto;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.42);
+}
+
+.app-route-reveal:hover {
+  border-color: rgba(45, 212, 191, 0.56);
+}
+
+.app-editor-chip {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  z-index: 199990;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.78);
+  color: #e2e8f0;
+  padding: 9px 12px;
+  font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+}
+
+@media (max-width: 980px) {
+  .app-route-layer {
+    left: 12px;
+    right: 12px;
+  }
+
+  .app-route-switcher {
+    justify-content: center;
+    flex-wrap: wrap;
+    border-radius: 12px;
+  }
+
+  .app-route-reveal {
+    margin-left: auto;
+  }
+
+  .app-editor-chip {
+    top: 94px;
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

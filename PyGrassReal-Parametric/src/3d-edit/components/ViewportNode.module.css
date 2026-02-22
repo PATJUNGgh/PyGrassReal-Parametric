@@ -1,0 +1,77 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-right: 8px;
+  color: #e5e7eb;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(233, 238, 246, 0.7);
+}
+
+.selectWrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 5px 24px 5px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 15, 18, 0.85);
+  color: #f8fafc;
+  font-size: 10px;
+  font-weight: 600;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.select:focus {
+  outline: none;
+  border-color: rgba(94, 234, 212, 0.6);
+  box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.15);
+}
+
+.chevron {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(233, 238, 246, 0.7);
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.description {
+  font-size: 9px;
+  line-height: 1.25;
+  color: rgba(233, 238, 246, 0.75);
+  background: rgba(15, 15, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+}
+
+.descriptionTitle {
+  font-weight: 700;
+  margin-right: 3px;
+}

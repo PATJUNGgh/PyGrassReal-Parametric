@@ -1,0 +1,867 @@
+.panel {
+    position: fixed;
+    z-index: 1300;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(125, 211, 252, 0.45);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(8, 28, 46, 0.34) 0%, rgba(9, 33, 56, 0.28) 100%);
+    box-shadow: 0 14px 36px rgba(5, 17, 33, 0.24);
+    backdrop-filter: blur(3px) saturate(100%);
+    -webkit-backdrop-filter: blur(10px) saturate(128%);
+    color: #f8fafc;
+    overflow: hidden;
+    transition: transform 300ms ease, opacity 300ms ease;
+}
+
+.planPanel {
+    position: fixed;
+    z-index: 1299;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(125, 211, 252, 0.45);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(8, 28, 46, 0.34) 0%, rgba(9, 33, 56, 0.28) 100%);
+    box-shadow: 0 14px 36px rgba(5, 17, 33, 0.2);
+    color: #f8fafc;
+    overflow: hidden;
+}
+
+.planDockButton {
+    position: fixed;
+    z-index: 1302;
+    width: 24px;
+    height: 64px;
+    padding: 0;
+    border: 1px solid rgba(125, 211, 252, 0.38);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    background: rgba(8, 47, 73, 0.34);
+    color: rgba(224, 242, 254, 0.88);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+}
+
+.planDockButtonActive {
+    background: linear-gradient(180deg, rgba(14, 116, 144, 0.56), rgba(3, 105, 161, 0.42));
+    color: rgba(240, 249, 255, 0.98);
+}
+
+.planDockButtonHasContent {
+    border-color: rgba(56, 189, 248, 0.66);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.26);
+}
+
+.planHeader {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px 0 14px;
+    background: linear-gradient(180deg, rgba(14, 116, 144, 0.32), rgba(14, 116, 144, 0.2));
+    border-bottom: 1px solid rgba(125, 211, 252, 0.2);
+}
+
+.planTitle {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.planModeToggle {
+    display: flex;
+    gap: 4px;
+}
+
+.planModeButton {
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    background: rgba(8, 47, 73, 0.2);
+    color: rgba(224, 242, 254, 0.88);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.planModeButtonActive {
+    border-color: rgba(125, 211, 252, 0.72);
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.56), rgba(3, 105, 161, 0.5));
+    color: rgba(240, 249, 255, 0.98);
+}
+
+.planBody {
+    flex: 1;
+    min-height: 0;
+    padding: 8px;
+}
+
+.planResizeHandleLeft {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    cursor: ew-resize;
+    touch-action: none;
+    z-index: 1300;
+}
+
+.planResizeHandleRight {
+    position: absolute;
+    right: -4px;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    cursor: ew-resize;
+    touch-action: none;
+    z-index: 1300;
+}
+
+.planTextarea {
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    resize: none;
+    box-sizing: border-box;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    border-radius: 10px;
+    background: rgba(5, 30, 55, 0.24);
+    color: #f8fafc;
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    outline: none;
+}
+
+.planTextarea:focus {
+    border-color: rgba(56, 189, 248, 0.95);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.planPreview {
+    height: 100%;
+    overflow-y: auto;
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    border-radius: 10px;
+    background: rgba(5, 30, 55, 0.2);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.planH1 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.planH2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.planH3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.planTask {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.planList {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.planParagraph {
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 4px;
+}
+
+.planCode {
+    margin: 0 0 6px 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(2, 6, 23, 0.65);
+    border: 1px solid rgba(125, 211, 252, 0.22);
+    font-size: 11px;
+    overflow-x: auto;
+}
+
+.planSpacer {
+    height: 8px;
+}
+
+.planEmpty {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.9);
+}
+
+.panelVisible {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.panelHidden {
+    transform: translateX(calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+.header {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px 0 14px;
+    background: linear-gradient(180deg, rgba(14, 116, 144, 0.36), rgba(14, 116, 144, 0.24));
+    border-bottom: 1px solid rgba(125, 211, 252, 0.25);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.headerTitle {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.headerButtons {
+    display: flex;
+    gap: 6px;
+}
+
+.headerButton {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid rgba(186, 230, 253, 0.34);
+    border-radius: 6px;
+    background: rgba(8, 47, 73, 0.35);
+    color: #f8fafc;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.headerButton:hover {
+    border-color: rgba(186, 230, 253, 0.62);
+    background: rgba(8, 47, 73, 0.58);
+}
+
+.connectionState {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: rgba(226, 232, 240, 0.92);
+    border-bottom: 1px solid rgba(125, 211, 252, 0.18);
+}
+
+.sessionToolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(125, 211, 252, 0.12);
+}
+
+.sessionButton {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    background: rgba(8, 47, 73, 0.22);
+    color: rgba(224, 242, 254, 0.9);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.sessionButton:hover {
+    border-color: rgba(125, 211, 252, 0.58);
+    background: rgba(8, 47, 73, 0.32);
+}
+
+.sessionButton:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: rgba(125, 211, 252, 0.2);
+    background: rgba(8, 47, 73, 0.14);
+}
+
+.sessionMenu {
+    margin: 0 10px;
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    border-radius: 9px;
+    max-height: 130px;
+    overflow-y: auto;
+    background: rgba(5, 30, 55, 0.22);
+}
+
+.sessionSearchWrap {
+    padding: 6px 6px 4px 6px;
+    border-bottom: 1px solid rgba(125, 211, 252, 0.1);
+}
+
+.sessionSearch {
+    width: 100%;
+    height: 24px;
+    box-sizing: border-box;
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    border-radius: 6px;
+    background: rgba(8, 47, 73, 0.24);
+    color: rgba(240, 249, 255, 0.95);
+    font-size: 10px;
+    padding: 0 8px;
+    outline: none;
+}
+
+.sessionSearch::placeholder {
+    color: rgba(148, 163, 184, 0.78);
+}
+
+.sessionSearch:focus {
+    border-color: rgba(56, 189, 248, 0.72);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.22);
+}
+
+.sessionEmpty {
+    padding: 8px;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(148, 163, 184, 0.85);
+}
+
+.sessionItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-bottom: 1px solid rgba(125, 211, 252, 0.1);
+}
+
+.sessionItem:last-child {
+    border-bottom: none;
+}
+
+.sessionItemActive {
+    background: rgba(14, 116, 144, 0.18);
+}
+
+.sessionSelect {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    border: 1px solid rgba(125, 211, 252, 0.2);
+    border-radius: 6px;
+    background: rgba(8, 47, 73, 0.2);
+    color: rgba(240, 249, 255, 0.92);
+    font-size: 10px;
+    text-align: left;
+    padding: 0 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.sessionDelete {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    border-radius: 6px;
+    background: rgba(127, 29, 29, 0.2);
+    color: rgba(254, 202, 202, 0.95);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.sessionDelete svg {
+    width: 12px;
+    height: 12px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.sessionDelete:hover {
+    border-color: rgba(248, 113, 113, 0.72);
+    background: rgba(127, 29, 29, 0.34);
+}
+
+.sessionDeleteConfirm {
+    border-color: rgba(74, 222, 128, 0.7);
+    background: rgba(21, 128, 61, 0.28);
+    color: rgba(220, 252, 231, 0.95);
+}
+
+.sessionDeleteConfirm:hover {
+    border-color: rgba(74, 222, 128, 0.9);
+    background: rgba(21, 128, 61, 0.38);
+}
+
+.historyArea {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.emptyState {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.9);
+    text-align: center;
+    margin: auto 0;
+}
+
+.messageRow {
+    padding: 8px 10px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.userMessage {
+    align-self: flex-end;
+    max-width: 90%;
+    background: rgba(14, 116, 144, 0.32);
+    border: 1px solid rgba(125, 211, 252, 0.34);
+}
+
+.assistantMessage {
+    align-self: flex-start;
+    max-width: 90%;
+    background: rgba(8, 47, 73, 0.22);
+    border: 1px solid rgba(125, 211, 252, 0.25);
+}
+
+.messageRole {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(203, 213, 225, 0.9);
+}
+
+.messageText {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.messageImage {
+    width: 140px;
+    min-width: 140px;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    cursor: zoom-in;
+}
+
+.messageImageList {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+}
+
+.inputArea {
+    box-sizing: border-box;
+    border-top: 1px solid rgba(125, 211, 252, 0.22);
+    padding: 8px 8px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background:
+        radial-gradient(120% 90% at 15% 10%, rgba(56, 189, 248, 0.11), transparent 60%),
+        rgba(6, 24, 43, 0.34);
+}
+
+.composerShell {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.inputWrap {
+    position: relative;
+    width: 100%;
+}
+
+.previewBar {
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    border-radius: 8px;
+    background: rgba(8, 47, 73, 0.22);
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.previewMeta {
+    font-size: 9px;
+    color: rgba(186, 230, 253, 0.92);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.previewText {
+    font-size: 10px;
+    color: rgba(226, 232, 240, 0.9);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 66px;
+    overflow-y: auto;
+}
+
+.previewUseButton {
+    align-self: flex-end;
+    height: 18px;
+    padding: 0 8px;
+    border: 1px solid rgba(125, 211, 252, 0.45);
+    border-radius: 6px;
+    background: rgba(14, 116, 144, 0.24);
+    color: rgba(240, 249, 255, 0.96);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.previewUseButton:hover {
+    border-color: rgba(125, 211, 252, 0.72);
+    background: rgba(14, 116, 144, 0.36);
+}
+
+.modeRow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.imageQueue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    padding: 1px 0;
+    min-height: 28px;
+}
+
+.imageQueueItem {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+}
+
+.imagePreviewButton {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    border-radius: 8px;
+    background: rgba(8, 47, 73, 0.22);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.imageThumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.imageRemoveButton {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border: 1px solid rgba(248, 113, 113, 0.7);
+    border-radius: 50%;
+    background: rgba(127, 29, 29, 0.85);
+    color: #fee2e2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.previewOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.62);
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.previewModal {
+    position: relative;
+    max-width: min(80vw, 640px);
+    max-height: min(80vh, 640px);
+    border: 1px solid rgba(125, 211, 252, 0.48);
+    border-radius: 12px;
+    background: rgba(8, 47, 73, 0.5);
+    padding: 12px;
+}
+
+.previewModalImage {
+    width: 100%;
+    height: 100%;
+    max-height: min(76vh, 600px);
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+}
+
+.previewClose {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid rgba(186, 230, 253, 0.5);
+    border-radius: 6px;
+    background: rgba(8, 47, 73, 0.7);
+    color: #f8fafc;
+    cursor: pointer;
+}
+
+.modeGroup {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 4px;
+    border-radius: 6px;
+}
+
+.modeGroupModel {
+    background: rgba(6, 78, 59, 0.22);
+    border: 1px solid rgba(110, 231, 183, 0.28);
+}
+
+.modeGroupAction {
+    background: rgba(30, 58, 138, 0.2);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+}
+
+.modeButton {
+    height: 18px;
+    min-width: 0;
+    padding: 0 5px;
+    border-radius: 5px;
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    background: rgba(8, 47, 73, 0.2);
+    color: rgba(224, 242, 254, 0.82);
+    font-size: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.modeGroupModel .modeButton {
+    height: 20px;
+    padding: 0 7px;
+    font-size: 9px;
+}
+
+.modeButtonActive {
+    border-color: rgba(125, 211, 252, 0.72);
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.56), rgba(3, 105, 161, 0.5));
+    color: rgba(240, 249, 255, 0.98);
+    box-shadow: 0 2px 8px rgba(3, 105, 161, 0.2);
+}
+
+.modeGroupModel .modeButtonActive {
+    border-color: rgba(110, 231, 183, 0.78);
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.62), rgba(6, 95, 70, 0.58));
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.24);
+}
+
+.modeGroupAction .modeButtonActive {
+    border-color: rgba(147, 197, 253, 0.82);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.62), rgba(30, 64, 175, 0.6));
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.24);
+}
+
+.input {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 76px;
+    max-height: 130px;
+    resize: none;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    border-radius: 10px;
+    background: rgba(5, 30, 55, 0.26);
+    color: #f8fafc;
+    padding: 10px 44px 10px 11px;
+    font-size: 12px;
+    line-height: 1.45;
+    outline: none;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.input:focus {
+    border-color: rgba(56, 189, 248, 0.95);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.input::placeholder {
+    color: rgba(154, 170, 212, 0.72);
+    letter-spacing: 0.02em;
+}
+
+.sendButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 38px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid rgba(125, 211, 252, 0.5);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.56), rgba(3, 105, 161, 0.5));
+    color: rgba(240, 249, 255, 0.96);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(3, 105, 161, 0.2);
+    transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+
+.sendButton:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+    box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+}
+
+.sendButton:active {
+    transform: translateY(0);
+}
+
+.resizeHandle {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    touch-action: none;
+}
+
+.resizeHandle::after {
+    content: "";
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid rgba(125, 211, 252, 0.85);
+    border-bottom: 2px solid rgba(125, 211, 252, 0.85);
+}
+
+.resizeHandleLeft {
+    position: absolute;
+    left: 1px;
+    bottom: 1px;
+    width: 14px;
+    height: 14px;
+    cursor: nesw-resize;
+    touch-action: none;
+}
+
+.resizeHandleLeft::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    bottom: 2px;
+    width: 8px;
+    height: 8px;
+    border-left: 2px solid rgba(125, 211, 252, 0.85);
+    border-bottom: 2px solid rgba(125, 211, 252, 0.85);
+}
+
+.floatingToggle {
+    position: fixed;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(125, 211, 252, 0.55);
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.34), rgba(3, 105, 161, 0.28));
+    color: rgba(240, 249, 255, 0.92);
+    font-size: 20px;
+    line-height: 1;
+    z-index: 1301;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(3, 105, 161, 0.22);
+    transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.floatingToggle:hover {
+    border-color: rgba(125, 211, 252, 0.72);
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.46), rgba(3, 105, 161, 0.38));
+    box-shadow: 0 8px 18px rgba(3, 105, 161, 0.3);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .panel {
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+    }
+}

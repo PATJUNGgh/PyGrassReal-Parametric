@@ -1,0 +1,61 @@
+.chat-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  /* เปลี่ยนมาใช้ absolute เพื่อให้ลอยตัวได้อิสระ */
+  left: 0;
+  right: 0;
+  top: -5%;
+  /* ปรับลงมาให้สมดุลหลังจากเอาข้อความออกแล้วครับ */
+  z-index: 10;
+  pointer-events: none;
+  /* ป้องกันการบล็อกคลิกบนกล่องอื่น ๆ */
+}
+
+.chat-empty-logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-empty-logo {
+  max-width: 600px;
+  /* เพิ่มขนาดโลโก้ให้ใหญ่ขึ้นตามต้องการ */
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 0 40px rgba(125, 211, 252, 0.15));
+  pointer-events: auto;
+  /* ให้รับการคลิกได้เฉพาะตัวโลโก้ */
+}
+
+.chat-empty-logo:hover {
+  transform: scale(1.02);
+}
+
+.chat-empty-title {
+  font-size: 1.25rem;
+  /* ลดขนาดลงเพื่อให้ดูสวยงามและไม่เทอะทะ */
+  font-weight: 600;
+  color: var(--dash-text);
+  margin: 0;
+  margin-top: -100px;
+  /* ยกข้อความขึ้นไปชิดใต้โลโก้ตามลูกศรที่ชี้ครับ */
+  letter-spacing: -0.01em;
+  opacity: 0.9;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .chat-empty-title {
+    font-size: 1.75rem;
+    text-align: center;
+    padding: 0 2rem;
+  }
+
+  .chat-empty-logo {
+    max-width: 240px;
+  }
+}

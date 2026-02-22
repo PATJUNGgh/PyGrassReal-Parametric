@@ -1,0 +1,196 @@
+/* NumberSliderNode.module.css */
+
+.smartInputContainer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.smartInputLabel {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.smartInput {
+    font-size: 10px;
+    font-weight: 600;
+    color: #e2e8f0;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    padding: 2px 4px;
+    text-align: left; /* Default */
+}
+
+/* Specific styles for SmartInput instances */
+.smartInputCenter {
+    text-align: center;
+}
+
+.smartInputMedium {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 8px;
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.smartInputSmall {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 6px;
+    text-align: center;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: rgba(2, 6, 23, 0.5);
+}
+
+.smartInputGlobalConfig {
+    /* No specific styles currently, but added for consistency and future use */
+}
+
+.sliderRow {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    background: rgba(15, 23, 42, 0.38);
+    overflow: hidden;
+}
+
+.sliderRowContent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    padding-right: 22px;
+}
+
+.sliderRowIndex {
+    width: 18px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 700;
+}
+
+.sliderRangeInput {
+    width: 100%;
+    cursor: pointer;
+    accent-color: #38bdf8;
+}
+
+.deleteSliderButton {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fecaca;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 7px;
+}
+
+.individualConfigContainer {
+    margin-top: 8px;
+    margin-right: -4px;
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    box-shadow: 0 8px 18px rgba(2, 6, 23, 0.45);
+}
+
+.sliderBodyContainer {
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    margin-left: -2px;
+    margin-right: -12px;
+}
+
+.sliderBodyFlex {
+    flex: 1;
+}
+
+.sliderBodyHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-right: 28px;
+}
+
+.sliderBodyModeToggleGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modeToggleButton {
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #e2e8f0;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    padding: 3px 8px;
+    cursor: pointer;
+}
+
+.modeToggleButtonGlobal {
+    background: rgba(56, 189, 248, 0.2);
+}
+
+.modeToggleButtonIndividual {
+    background: rgba(100, 116, 139, 0.3);
+}
+
+.modeToggleText {
+    font-size: 10px;
+    color: rgba(255,255,255,0.78);
+    font-weight: 700;
+}
+
+.sliderCountText {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+}
+
+.globalConfigInputsContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 6px;
+    padding-right: 10px;
+}
+
+.sliderRowsContainer {
+    display: flex;
+    flex-direction: column;
+    padding-right: 2px;
+}
+
+.addSliderButtonContainer {
+    margin-top: 10px;
+    padding-right: 2px;
+}
+
+.addSliderButton {
+    width: 100%;
+    border: 1px dashed rgba(125, 211, 252, 0.45);
+    background: rgba(15, 23, 42, 0.25);
+    color: #bae6fd;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 8px;
+    cursor: pointer;
+}

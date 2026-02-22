@@ -1,0 +1,124 @@
+.chat-messages-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  padding: 2rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.chat-messages-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.message-bubble-row {
+  display: flex;
+  gap: 1.25rem;
+  width: 100%;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.message-bubble-row.user {
+  flex-direction: row-reverse;
+}
+
+.message-icon-wrapper {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface-soft);
+  color: var(--dash-text-soft);
+}
+
+.message-bubble-row.user .message-icon-wrapper {
+  background: var(--dash-accent-blue);
+  color: #000;
+  border-color: var(--dash-accent-blue);
+}
+
+.message-bubble-row.assistant .message-icon-wrapper {
+  background: rgba(125, 211, 252, 0.1);
+  color: var(--dash-accent-blue);
+  border-color: rgba(125, 211, 252, 0.3);
+}
+
+.message-bubble-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 80%;
+}
+
+.message-bubble-row.user .message-bubble-content {
+  align-items: flex-end;
+}
+
+.message-role-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--dash-text);
+  margin-bottom: 2px;
+}
+
+.message-text-body {
+  font-size: 0.875rem;
+  /* Reduced from 1rem to 0.875rem (14px) */
+  line-height: 1.6;
+  color: var(--dash-text-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-bubble-row.user .message-text-body {
+  background: var(--dash-surface-soft);
+  padding: 0.75rem 1rem;
+  border-radius: 18px 18px 4px 18px;
+  color: var(--dash-text);
+  border: 1px solid var(--dash-line);
+}
+
+.message-bubble-row.assistant.generating .message-text-body {
+  display: flex;
+  align-items: center;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,499 +1,335 @@
-import { Canvas } from '@react-three/fiber';
-import '@react-three/drei'; // Explicitly import for type augmentation
-import { useState, useRef, useCallback, useMemo, useEffect, createRef, useContext } from 'react';
-import * as THREE from 'three';
-import './index.css';
-import { NodeCanvas } from './components/NodeCanvas';
-import { UIToolbar } from './components/ui/UIToolbar';
-import { DragOverlay } from './components/ui/DragOverlay';
-import type { SceneObject } from './types/scene';
-import type { NodeData, NodeCanvasHandle } from './types/NodeTypes';
-import { useTextureUploader } from './hooks/useTextureUploader';
-import { SceneSelectionOverlay } from './components/scene/SceneSelectionOverlay';
-import { useGraphEvaluator } from './hooks/useGraphEvaluator';
-import { SceneInner } from './components/scene/SceneInner';
-import { SceneInteractionContext, SceneInteractionProvider } from './context/SceneInteractionContext';
-import { NodeGraphProvider } from './context/NodeGraphContext';
+import { ArrowLeft, Eye, EyeOff, LayoutDashboard, ShieldQuestion, UserRoundPlus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import Editor from './3d-edit/Editor';
+import ForgotPasswordPage from './auth/ForgotPasswordPage';
+import LoginPage from './auth/LoginPage';
+import RegisterPage from './auth/RegisterPage';
+import DashboardPage from './dashboard/DashboardPage';
+import { ChatAssistantPage } from './dashboard/ChatAssistantPage';
+import { DashboardLayout } from './dashboard/DashboardLayout';
+import { DashboardHeader } from './dashboard/components/DashboardHeader';
+import AboutPage from './pages/AboutPage';
+import DocsPage from './pages/DocsPage';
+import LandingPage from './pages/LandingPage';
+import CheckoutPage from './pricing/CheckoutPage';
+import PricingCancelPage from './pricing/PricingCancelPage';
+import PricingPage from './pricing/PricingPage';
+import PricingSuccessPage from './pricing/PricingSuccessPage';
+import './app-shell.css';
+import type { Workflow } from './dashboard/types/workflow.types';
 
-// This component acts as a bridge to synchronize specific context states
-// into refs held by a parent component that shouldn't re-render frequently.
-// NOTE: This is a workaround for a complex state interaction pattern.
-const InteractionRefBridge = ({
-  gumballHoveredRef,
-  handlesHoveredRef,
-  isGumballDraggingRef,
-  isHandleDraggingRef,
-}: {
-  gumballHoveredRef: React.MutableRefObject<boolean>;
-  handlesHoveredRef: React.MutableRefObject<boolean>;
-  isGumballDraggingRef: React.MutableRefObject<boolean>;
-  isHandleDraggingRef: React.MutableRefObject<boolean>;
-}) => {
-  const ctx = useContext(SceneInteractionContext);
+type AppRoute =
+  | '/'
+  | '/about'
+  | '/docs'
+  | '/dashboard'
+  | '/dashboard/chat'
+  | '/dashboard/settings'
+  | '/pricing'
+  | '/pricing/checkout'
+  | '/pricing/success'
+  | '/pricing/cancel'
+  | '/editor'
+  | '/auth/login'
+  | '/auth/register'
+  | '/auth/forgot';
 
-  // This effect's job is to update the refs in the parent component
-  // with the latest values from the context.
-  useEffect(() => {
-    if (!ctx) return;
-    // Sync ref states
-    gumballHoveredRef.current = ctx.gumballHoveredRef.current;
-    handlesHoveredRef.current = ctx.handlesHoveredRef.current;
-    // Sync state values
-    isGumballDraggingRef.current = ctx.isGumballDragging;
-    isHandleDraggingRef.current = ctx.isHandleDragging;
-  }, [
-    ctx, // The entire context object
-    gumballHoveredRef,
-    handlesHoveredRef,
-    isGumballDraggingRef,
-    isHandleDraggingRef,
-  ]);
+const DEFAULT_ROUTE: AppRoute = '/';
+const AUTH_SESSION_KEY = 'pygrass-auth-session';
+const SWITCHER_HIDDEN_KEY = 'pygrass-route-switcher-hidden';
+const SHOW_DEV_SWITCHER = true;
 
-  return null;
+const isAppRoute = (path: string): path is AppRoute => {
+  return (
+    path === '/' ||
+    path === '/about' ||
+    path === '/docs' ||
+    path === '/dashboard' ||
+    path === '/dashboard/chat' ||
+    path === '/dashboard/settings' ||
+    path === '/pricing' ||
+    path === '/pricing/checkout' ||
+    path === '/pricing/success' ||
+    path === '/pricing/cancel' ||
+    path === '/editor' ||
+    path === '/auth/login' ||
+    path === '/auth/register' ||
+    path === '/auth/forgot'
+  );
 };
 
-const AppContent = () => {
-  const controlsContainerRef = useRef<HTMLDivElement>(null);
-  const nodeCanvasRef = useRef<NodeCanvasHandle>(null);
-  const snapUiEnabled = false;
-  const NODE_EDITOR_TYPES: NodeData['type'][] = [
-    'box', 'sphere', 'vector-xyz', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material',
-    'text-on-mesh', 'mesh-array', 'mesh-eval', 'face-normals', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider',
-    'series', 'panel', 'group'
-  ];
+const extractPathname = (path: string): string => {
+  try {
+    const parsed = new URL(path, window.location.origin);
+    return parsed.pathname || '/';
+  } catch {
+    const [pathname] = path.split(/[?#]/, 1);
+    return pathname || '/';
+  }
+};
 
-  const WIDGET_EDITOR_TYPES: NodeData['type'][] = [
-    'widget-window', 'background-color', 'viewport', 'layer-source', 'layer-bridge', 'layer-view', 'antivirus', 'custom',
-    'input', 'output', 'number-slider', 'panel', 'group'
-  ];
-  // Create refs first
-  const boxRef = useRef<THREE.Mesh>(null);
-  const sphereRef = useRef<THREE.Mesh>(null);
-
-  // *** STATES MOVED TO SceneInteractionProvider ***
-  // gumballHovered, handlesHovered, dragJustFinished, isGumballActiveRef
-  // selectedIds, setSelectedIds, selectionSource, setSelectionSource
-  // isHandleDragging, setIsHandleDragging, etc.
-
-  // Object management
-  const [sceneObjects, setSceneObjects] = useState<SceneObject[]>(() => [
-    {
-      id: 'box-1',
-      type: 'box',
-      ref: boxRef,
-      position: [-2, 0.5, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      isFaded: false
-    },
-    {
-      id: 'sphere-1',
-      type: 'sphere',
-      ref: sphereRef,
-      position: [2, 0.5, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      isFaded: false
+const buildRouteUrl = (target: string, normalizedRoute: AppRoute): string => {
+  try {
+    const parsed = new URL(target, window.location.origin);
+    if (parsed.pathname !== normalizedRoute) {
+      return normalizedRoute;
     }
-  ]);
+    return `${normalizedRoute}${parsed.search}${parsed.hash}`;
+  } catch {
+    return normalizedRoute;
+  }
+};
 
-  const { evaluateGraph } = useGraphEvaluator({ sceneObjects, setSceneObjects });
+const normalizeRoute = (path: string): AppRoute => {
+  const pathname = extractPathname(path);
+  if (pathname === '/' || pathname === '') {
+    return '/';
+  }
 
-  const [backgroundStyle, setBackgroundStyle] = useState({
-    cssBackground: '#1e1e1e',
-    sceneColor: '#1e1e1e',
-    isGradient: false,
+  if (isAppRoute(pathname)) {
+    return pathname;
+  }
+
+  return DEFAULT_ROUTE;
+};
+
+function App() {
+  const initialAuthenticated = window.sessionStorage.getItem(AUTH_SESSION_KEY) === '1';
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initialAuthenticated);
+  const [isSwitcherHidden, setIsSwitcherHidden] = useState<boolean>(() => {
+    return window.localStorage.getItem(SWITCHER_HIDDEN_KEY) === '1';
   });
-  const [viewportMode, setViewportMode] = useState<'wireframe' | 'depth' | 'monochrome' | 'rendered'>('rendered');
+  const [route, setRoute] = useState<AppRoute>(() => normalizeRoute(window.location.pathname));
+  const [, setLocationVersion] = useState(0);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
-  const nodeObjectRefs = useRef(new Map<string, React.RefObject<THREE.Object3D>>());
+  const navigate = useCallback((nextPath: string, options?: { replace?: boolean }) => {
+    const nextRoute = normalizeRoute(nextPath);
+    const nextUrl = buildRouteUrl(nextPath, nextRoute);
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-  const [mode, _setMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
-  const [activeDragNode, setActiveDragNode] = useState<{ type: NodeData['type'], x: number, y: number } | null>(null);
-  const [showNodeEditor, setShowNodeEditor] = useState(false);
-  const [showWidgetEditor, setShowWidgetEditor] = useState(false);
-  const [interactionMode, setInteractionMode] = useState<'3d' | 'node' | 'wire'>('3d');
-  const nodeOverlayRef = useRef<HTMLDivElement | null>(null);
-  const nodeOverlayHoverRef = useRef(false);
-
-  // NOTE: A few refs for the 2D selection logic remain here as they are specific to App's 2D canvas logic
-  const gumballHoveredFor2D = useRef<boolean>(false);
-  const handlesHoveredFor2D = useRef<boolean>(false);
-  const isGumballDraggingRef = useRef(false);
-  const isHandleDraggingRef = useRef(false);
-
-  const handleNodeDelete = useCallback((nodeId: string) => {
-    // setSceneObjects is removed to prevent conflict with NodeCanvas history logic.
-    // The deletion is handled by NodeCanvas -> GraphEvaluator -> automatic sync.
-    // setSelectedIds is now in context, can't call it here directly.
-    // This logic should be moved or handled via context-aware functions.
-    // For now, we will rely on onPointerMissed to clear selection.
-    nodeObjectRefs.current.delete(nodeId);
-  }, [nodeCanvasRef]);
-
-  const handleBackgroundStyleChange = useCallback((style: { cssBackground: string; sceneColor: string; isGradient: boolean }) => {
-    setBackgroundStyle((prev) => {
-      if (
-        prev.cssBackground === style.cssBackground &&
-        prev.sceneColor === style.sceneColor &&
-        prev.isGradient === style.isGradient
-      ) {
-        return prev;
+    if (currentUrl !== nextUrl) {
+      if (options?.replace) {
+        window.history.replaceState(null, '', nextUrl);
+      } else {
+        window.history.pushState(null, '', nextUrl);
       }
-      return style;
-    });
-  }, [nodeCanvasRef]);
+      setLocationVersion((version) => version + 1);
+    } else if (options?.replace) {
+      window.history.replaceState(null, '', nextUrl);
+      setLocationVersion((version) => version + 1);
+    }
 
-  const handleNodeCreate = useCallback((node: NodeData) => {
-    if (node.type !== 'box' && node.type !== 'sphere') return;
-
-    const ref = createRef<THREE.Object3D>();
-    nodeObjectRefs.current.set(node.id, ref);
-
-    setSceneObjects((prev) => [
-      ...prev,
-      {
-        id: node.id,
-        type: node.type,
-        ref,
-        position: [0, 0.5, 0],
-        rotation: [0, 0, 0],
-        scale: [1, 1, 1],
-        isFaded: false
-      }
-    ]);
+    setRoute(nextRoute);
   }, []);
-
-  const lastUndoTime = useRef(0);
-  const lastRedoTime = useRef(0);
-
-  const handleZoomToFit = useCallback(() => {
-    nodeCanvasRef.current?.zoomToFit();
-  }, []);
-
-  const handleUndo = useCallback(() => {
-    const now = Date.now();
-    if (now - lastUndoTime.current < 200) { // Increased debounce time
-      console.log('Undo call debounced');
-      return;
-    }
-    lastUndoTime.current = now;
-    console.log('handleUndo in App.tsx called');
-    nodeCanvasRef.current?.undo();
-  }, []);
-
-  const handleRedo = useCallback(() => {
-    const now = Date.now();
-    if (now - lastRedoTime.current < 200) { // Increased debounce time
-      console.log('Redo call debounced');
-      return;
-    }
-    lastRedoTime.current = now;
-    console.log('handleRedo in App.tsx called');
-    nodeCanvasRef.current?.redo();
-  }, []);
-
-  const handleInteractionStart = useCallback(() => {
-    nodeCanvasRef.current?.startAction();
-  }, [nodeCanvasRef]);
-
-  const handleInteractionEnd = useCallback(() => {
-    nodeCanvasRef.current?.endActionAfterNextChange();
-  }, [nodeCanvasRef]);
-
-  const handleSceneTransformChange = useCallback((id: string, updates: { position?: number[]; rotation?: number[]; scale?: number[] }) => {
-    const normalized: Partial<NodeData['data']> = {};
-    if (updates.position) {
-      const [x, y, z] = updates.position;
-      normalized.location = { x, y, z };
-    }
-    if (updates.rotation) {
-      const [x, y, z] = updates.rotation;
-      normalized.rotation = { x, y, z };
-    }
-    if (updates.scale) {
-      const [x, y, z] = updates.scale;
-      normalized.scale = { x, y, z };
-    }
-    if (Object.keys(normalized).length === 0) {
-      return;
-    }
-    nodeCanvasRef.current?.updateNodeData(id, normalized);
-  }, [nodeCanvasRef]);
-
-  const {
-    handleTextures,
-    setHandleTextureTarget,
-    fileInputRef,
-    handleImageButtonClick,
-    handleImageChange,
-  } = useTextureUploader();
 
   useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      if (interactionMode === '3d' || interactionMode === 'node') {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
-    return () => window.removeEventListener('contextmenu', handleContextMenu, { capture: true } as AddEventListenerOptions);
-  }, [interactionMode]);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (interactionMode !== '3d') return;
-      const target = e.target as HTMLElement | null;
-      const isNodeElement = !!target?.closest(
-        '.custom-node-base, .widget-window-node-base, .group-node-base, .node-port, button, input, select, textarea'
-      );
-      nodeOverlayHoverRef.current = isNodeElement;
-      if (!isNodeElement) {
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-          const evt = new PointerEvent('pointermove', {
-            bubbles: true,
-            cancelable: true,
-            clientX: e.clientX,
-            clientY: e.clientY,
-            buttons: (e as any).buttons ?? 0,
-            ctrlKey: e.ctrlKey,
-            shiftKey: e.shiftKey,
-            altKey: e.altKey,
-            metaKey: e.metaKey,
-          });
-          canvas.dispatchEvent(evt);
-        }
-      }
-    };
-    window.addEventListener('mousemove', handleMove, { passive: true });
-    return () => window.removeEventListener('mousemove', handleMove);
-  }, [interactionMode]);
-
-
-  const isHandlingUpRef = useRef(false);
-
-  const gizmoBackdropTexture = useMemo(() => {
-    const size = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.1, size / 2, size / 2, size * 0.65);
-      gradient.addColorStop(0, 'rgba(18, 38, 64, 0.95)');
-      gradient.addColorStop(0.5, 'rgba(30, 70, 120, 0.7)');
-      gradient.addColorStop(1, 'rgba(10, 20, 35, 0.35)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, size, size);
+    const normalized = normalizeRoute(window.location.pathname);
+    if (normalized !== window.location.pathname) {
+      window.history.replaceState(null, '', normalized);
     }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-    return texture;
+
+    const handlePopState = () => {
+      const nextRoute = normalizeRoute(window.location.pathname);
+      if (nextRoute !== window.location.pathname) {
+        window.history.replaceState(null, '', nextRoute);
+      }
+      setRoute(nextRoute);
+      setLocationVersion((version) => version + 1);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
-  const isNodeOverlayVisible = ((showNodeEditor || showWidgetEditor) || interactionMode === 'node' || interactionMode === 'wire') && interactionMode !== '3d';
+  const handleAuthenticated = useCallback(() => {
+    window.sessionStorage.setItem(AUTH_SESSION_KEY, '1');
+    setIsAuthenticated(true);
+    window.history.replaceState(null, '', '/dashboard');
+    setRoute('/dashboard');
+    setLocationVersion((version) => version + 1);
+  }, []);
+
+  const handleSignedOut = useCallback(() => {
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY);
+    setIsAuthenticated(false);
+    window.history.replaceState(null, '', '/auth/login');
+    setRoute('/auth/login');
+    setLocationVersion((version) => version + 1);
+  }, []);
+
+  const isNavActive = (target: AppRoute) => route === target;
+
+  const setSwitcherHidden = useCallback((hidden: boolean) => {
+    setIsSwitcherHidden(hidden);
+    if (hidden) {
+      window.localStorage.setItem(SWITCHER_HIDDEN_KEY, '1');
+      return;
+    }
+    window.localStorage.removeItem(SWITCHER_HIDDEN_KEY);
+  }, []);
+
+  const handleOpenWorkflowEditor = useCallback((workflow: Workflow) => {
+    setSelectedWorkflow(workflow);
+    navigate('/editor');
+  }, [navigate]);
+
+  let content: ReactElement;
+  if (route === '/') {
+    content = <LandingPage onNavigate={navigate} />;
+  } else if (route === '/about') {
+    content = <AboutPage onNavigate={navigate} />;
+  } else if (route === '/docs') {
+    content = <DocsPage onNavigate={navigate} />;
+  } else if (route === '/auth/login') {
+    content = <LoginPage onNavigate={navigate} onAuthenticated={handleAuthenticated} />;
+  } else if (route === '/auth/register') {
+    content = <RegisterPage onNavigate={navigate} />;
+  } else if (route === '/auth/forgot') {
+    content = <ForgotPasswordPage onNavigate={navigate} />;
+  } else if (route === '/dashboard' || route === '/dashboard/chat' || route === '/dashboard/settings') {
+    content = (
+      <DashboardLayout
+        activeRoute={route}
+        onNavigate={navigate}
+        onSignOut={handleSignedOut}
+      >
+        {route === '/dashboard' && (
+          <DashboardPage
+            onOpenWorkflowEditor={handleOpenWorkflowEditor}
+            onUpgradePlan={() => navigate('/pricing?from=dashboard')}
+          />
+        )}
+        {route === '/dashboard/chat' && (
+          <ChatAssistantPage onUpgradePlan={() => navigate('/pricing?from=dashboard')} />
+        )}
+        {route === '/dashboard/settings' && (
+          <div className="dashboard-overview-stack">
+            <DashboardHeader />
+            <section className="dashboard-settings-state">
+              <h2>Settings</h2>
+              <p>Workspace-level controls are currently in progress for this release.</p>
+              <div className="dashboard-settings-note">
+                This panel will include team roles, API keys, and shared workflow defaults in upcoming updates.
+              </div>
+            </section>
+          </div>
+        )}
+      </DashboardLayout>
+    );
+  } else if (route === '/pricing') {
+    content = <PricingPage onNavigate={navigate} />;
+  } else if (route === '/pricing/checkout') {
+    content = <CheckoutPage onNavigate={navigate} />;
+  } else if (route === '/pricing/success') {
+    content = <PricingSuccessPage onNavigate={navigate} />;
+  } else if (route === '/pricing/cancel') {
+    content = <PricingCancelPage onNavigate={navigate} />;
+  } else {
+    content = <Editor />;
+  }
 
   return (
     <>
-      <InteractionRefBridge
-        gumballHoveredRef={gumballHoveredFor2D}
-        handlesHoveredRef={handlesHoveredFor2D}
-        isGumballDraggingRef={isGumballDraggingRef}
-        isHandleDraggingRef={isHandleDraggingRef}
-      />
-      <SceneSelectionOverlay interactionMode={interactionMode} />
-      <div
-        ref={controlsContainerRef}
-        style={{ width: '100vw', height: '100vh', background: backgroundStyle.cssBackground, position: 'relative' }}
-      >
-        {/* Unified Toolbar */}
-        <div style={{ position: 'relative', zIndex: 200 }}>
-          <UIToolbar
-            showNodeEditor={showNodeEditor}
-            setShowNodeEditor={setShowNodeEditor}
-            showWidgetEditor={showWidgetEditor}
-            setShowWidgetEditor={setShowWidgetEditor}
-            interactionMode={interactionMode}
-            setInteractionMode={setInteractionMode}
-            setHandleTextureTarget={setHandleTextureTarget}
-            handleImageButtonClick={handleImageButtonClick}
-            setActiveDragNode={setActiveDragNode}
-            activeDragNode={activeDragNode}
-            fileInputRef={fileInputRef}
-            handleImageChange={handleImageChange}
-            onZoomToFit={handleZoomToFit}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-          />
+      {SHOW_DEV_SWITCHER ? (
+        <div className="app-route-layer">
+          {isSwitcherHidden ? (
+            <button
+              type="button"
+              className="app-route-reveal"
+              onClick={() => setSwitcherHidden(false)}
+              title="Show view switcher"
+            >
+              <Eye size={13} />
+              <span>Show menu</span>
+            </button>
+          ) : (
+            <div className="app-route-switcher" role="navigation" aria-label="View switcher">
+              <button
+                type="button"
+                className={`${isNavActive('/') ? 'is-active ' : ''}is-auth-blue`}
+                onClick={() => navigate('/')}
+              >
+                <span>Home</span>
+              </button>
+              <button
+                type="button"
+                className={`${isNavActive('/about') ? 'is-active ' : ''}is-auth-blue`}
+                onClick={() => navigate('/about')}
+              >
+                <span>About</span>
+              </button>
+              <button
+                type="button"
+                className={`${isNavActive('/docs') ? 'is-active ' : ''}is-auth-blue`}
+                onClick={() => navigate('/docs')}
+              >
+                <span>Docs</span>
+              </button>
+              <button
+                type="button"
+                className={isNavActive('/editor') ? 'is-active' : ''}
+                onClick={() => navigate('/editor')}
+              >
+                <ArrowLeft size={13} />
+                <span>3D-Edit</span>
+              </button>
+              <button
+                type="button"
+                className={isNavActive('/dashboard') ? 'is-active' : ''}
+                onClick={() => navigate('/dashboard')}
+              >
+                <LayoutDashboard size={13} />
+                <span>Dashboard</span>
+              </button>
+              <button
+                type="button"
+                className={isNavActive('/auth/login') ? 'is-active' : ''}
+                onClick={() => navigate('/auth/login')}
+              >
+                <span>Login</span>
+              </button>
+              <button
+                type="button"
+                className={isNavActive('/auth/register') ? 'is-active' : ''}
+                onClick={() => navigate('/auth/register')}
+              >
+                <UserRoundPlus size={13} />
+                <span>Register</span>
+              </button>
+              <button
+                type="button"
+                className={isNavActive('/auth/forgot') ? 'is-active' : ''}
+                onClick={() => navigate('/auth/forgot')}
+              >
+                <ShieldQuestion size={13} />
+                <span>Forgot</span>
+              </button>
+              <div className={`app-auth-chip ${isAuthenticated ? 'is-authenticated' : ''}`}>
+                {isAuthenticated ? 'Signed in' : 'Guest'}
+              </div>
+              <button
+                type="button"
+                className="app-route-hide"
+                onClick={() => setSwitcherHidden(true)}
+                title="Hide view switcher"
+              >
+                <EyeOff size={13} />
+                <span>Hide</span>
+              </button>
+            </div>
+          )}
         </div>
-        {/* 3D Canvas */}
-        <Canvas
-          camera={{ position: [5, 5, 5], fov: 50 }}
-          gl={{ alpha: true }}
-          onPointerMissed={() => {
-            // This logic will be moved inside a component that consumes the context
-          }}
-          onContextMenu={(e) => e.preventDefault()}
-          style={{
-            opacity: interactionMode === '3d' ? 1 : 0,
-            pointerEvents: interactionMode === '3d' ? 'auto' : 'none',
-          }}
-        >
-          <SceneInner
-            controlsContainerRef={controlsContainerRef}
-            sceneObjects={sceneObjects}
-            // onSelectionCalculated is now handled inside SceneInner via context
-            handleTextures={handleTextures}
-            gizmoBackdropTexture={gizmoBackdropTexture}
-            backgroundColor={backgroundStyle.sceneColor}
-            isGradientBackground={backgroundStyle.isGradient}
-            viewportMode={viewportMode}
-            interactionMode={interactionMode}
-            onTransformChange={handleSceneTransformChange}
-            onInteractionStart={handleInteractionStart}
-            onInteractionEnd={handleInteractionEnd}
-          // All other props are removed and will be accessed from context
-          />
-        </Canvas>
-        <div
-          id="snap-overlay"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        />
-        {/* Snap UI and Info panels would also be refactored to use the context */}
+      ) : null}
 
-        {/* Node Editor Canvas */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 100,
-          opacity: (showNodeEditor || showWidgetEditor) ? 1 : 0,
-          pointerEvents: 'none',
-          display: (showNodeEditor || showWidgetEditor) ? 'block' : 'none',
-        }}
-          id="node-overlay"
-          ref={nodeOverlayRef}
-          onPointerDownCapture={(e) => {
-            if (interactionMode !== '3d') return;
-            if (e.button !== 0) return;
-            const target = e.target as HTMLElement | null;
-            const isNodeElement = !!target?.closest(
-              '.custom-node-base, [data-no-selection], .widget-window-node-base, .group-node-base, .node-port, button, input, select, textarea'
-            );
-            nodeOverlayHoverRef.current = isNodeElement;
-            if (isNodeElement) return;
-            const canvas = document.querySelector('canvas');
-            if (!canvas) return;
-            let forwarded = false;
-            const evt = new PointerEvent('pointerdown', {
-              bubbles: true,
-              cancelable: true,
-              clientX: e.clientX,
-              clientY: e.clientY,
-              button: e.button,
-              buttons: (e as any).buttons,
-              ctrlKey: e.ctrlKey,
-              shiftKey: e.shiftKey,
-              altKey: e.altKey,
-              metaKey: e.metaKey,
-            });
-            forwarded = canvas.dispatchEvent(evt);
-            const handleUp = (upEvent: PointerEvent) => {
-              if (upEvent.button !== 0) return;
-              if (isHandlingUpRef.current) return;
-              isHandlingUpRef.current = true;
-
-              if (!forwarded) {
-                window.removeEventListener('pointerup', handleUp, { capture: true });
-                setTimeout(() => {
-                  isHandlingUpRef.current = false;
-                }, 0);
-                return;
-              }
-
-              const upEvt = new PointerEvent('pointerup', {
-                bubbles: true,
-                cancelable: true,
-                clientX: upEvent.clientX,
-                clientY: upEvent.clientY,
-                button: upEvent.button,
-                buttons: upEvent.buttons,
-                ctrlKey: upEvent.ctrlKey,
-                shiftKey: upEvent.shiftKey,
-                altKey: upEvent.altKey,
-                metaKey: upEvent.metaKey,
-              });
-              try {
-                canvas.dispatchEvent(upEvt);
-              } catch (err) {
-                // ignore pointer capture errors
-              }
-              window.removeEventListener('pointerup', handleUp, { capture: true });
-
-              setTimeout(() => {
-                isHandlingUpRef.current = false;
-              }, 0);
-            };
-            window.addEventListener('pointerup', handleUp, { capture: true });
-            e.preventDefault();
-          }}
-        >
-          <NodeCanvas
-            ref={nodeCanvasRef}
-            interactive={(showNodeEditor || showWidgetEditor || interactionMode === 'node' || interactionMode === 'wire')}
-            isDraggingNode={!!activeDragNode}
-            activeDragNode={activeDragNode}
-            setActiveDragNode={setActiveDragNode}
-            interactionMode={interactionMode}
-            allow3dNodeDrop={interactionMode === '3d' || showWidgetEditor}
-            sceneObjects={sceneObjects}
-            onNodeDelete={handleNodeDelete}
-            onNodeCreate={handleNodeCreate}
-            onBackgroundStyleChange={handleBackgroundStyleChange}
-            newNodeCategory={showNodeEditor && !showWidgetEditor ? 'nodes' : showWidgetEditor && !showNodeEditor ? 'widget' : undefined}
-            visibleNodeTypes={
-              showNodeEditor && !showWidgetEditor
-                ? NODE_EDITOR_TYPES
-                : showWidgetEditor && !showNodeEditor
-                  ? WIDGET_EDITOR_TYPES
-                  : undefined
-            }
-            visibleNodeCategory={
-              showNodeEditor && !showWidgetEditor
-                ? 'nodes'
-                : showWidgetEditor && !showNodeEditor
-                  ? 'widget'
-                  : undefined
-            }
-            onSceneNodeSelect={() => {
-              // This will also be updated to use context
-            }}
-            onViewportModeChange={setViewportMode}
-            onGraphChange={evaluateGraph}
-            uiEnabled={(showNodeEditor || showWidgetEditor)}
-          />
-        </div>
-      </div>
-      {activeDragNode && <DragOverlay activeDragNode={activeDragNode} />}
+      {route === '/editor' && selectedWorkflow ? (
+        <div className="app-editor-chip">{selectedWorkflow.name}</div>
+      ) : null}
+      {content}
     </>
-  );
-}
-
-function App() {
-  return (
-    <SceneInteractionProvider>
-      <NodeGraphProvider>
-        <AppContent />
-      </NodeGraphProvider>
-    </SceneInteractionProvider>
   );
 }
 

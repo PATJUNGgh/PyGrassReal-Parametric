@@ -1,0 +1,225 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding-top: 1px;
+    padding-left: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-right: 6px;
+}
+
+.toolbarRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.button {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(14, 165, 233, 0.2);
+    color: #ecfeff;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background: rgba(14, 165, 233, 0.3);
+}
+
+.iconButton {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.iconButton:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+}
+
+.iconButton:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.modeGroup {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.modeButton {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.07);
+    color: #cbd5e1;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.modeButton:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+}
+
+.modeButtonActive {
+    background: rgba(34, 211, 238, 0.3);
+    border-color: rgba(34, 211, 238, 0.7);
+    color: #ecfeff;
+}
+
+.modeButton:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.layerTable {
+    width: calc(100% - 4px);
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin-right: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.24);
+    overflow: hidden;
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22px 22px;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    font-size: 9px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: rgba(226, 232, 240, 0.65);
+    background: rgba(15, 23, 42, 0.32);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tableBody {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+.emptyState {
+    padding: 10px 8px;
+    font-size: 11px;
+    color: rgba(226, 232, 240, 0.72);
+}
+
+.layerRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22px 22px;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    background: transparent;
+}
+
+.layerRow:last-child {
+    border-bottom: none;
+}
+
+.layerRow:hover {
+    background: rgba(8, 47, 73, 0.28);
+}
+
+.layerRowActive {
+    background: rgba(14, 116, 144, 0.36);
+}
+
+.layerCell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.layerName {
+    color: #e2f7ff;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layerMeta {
+    font-size: 9px;
+    color: rgba(226, 232, 240, 0.72);
+    white-space: nowrap;
+}
+
+.switchCell {
+    display: flex;
+    justify-content: center;
+}
+
+.switchCell input[type='checkbox'] {
+    width: 12px;
+    height: 12px;
+    accent-color: #22d3ee;
+    cursor: pointer;
+}
+
+.deleteButton {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    align-self: center;
+    padding: 0;
+    line-height: 1;
+    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.38);
+    background: rgba(239, 68, 68, 0.14);
+    color: #fda4af;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.26);
+}
+
+.hiddenInput {
+    display: none;
+}
