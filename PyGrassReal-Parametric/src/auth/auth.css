@@ -1,22 +1,22 @@
 .auth-layout {
-  --auth-bg-start: #04070f;
-  --auth-bg-mid: #0a1324;
-  --auth-bg-end: #111b30;
-  --auth-card-bg: rgba(15, 23, 42, 0.72);
-  --auth-card-line: rgba(148, 163, 184, 0.32);
-  --auth-control-bg: rgba(15, 23, 42, 0.62);
-  --auth-control-line: rgba(148, 163, 184, 0.3);
-  --auth-control-focus: rgba(59, 130, 246, 0.7);
-  --auth-text: #e2e8f0;
-  --auth-muted: #9fb0c9;
-  --auth-link: #7dd3fc;
-  --auth-link-hover: #bae6fd;
-  --auth-error: #fecaca;
-  --auth-error-bg: rgba(185, 28, 28, 0.22);
-  --auth-error-line: rgba(248, 113, 113, 0.55);
-  --auth-success: #bbf7d0;
-  --auth-success-bg: rgba(22, 101, 52, 0.25);
-  --auth-success-line: rgba(74, 222, 128, 0.45);
+  --auth-bg-start: var(--pg-auth-bg-start, #04070f);
+  --auth-bg-mid: var(--pg-auth-bg-mid, #0a1324);
+  --auth-bg-end: var(--pg-auth-bg-end, #111b30);
+  --auth-card-bg: var(--pg-auth-card-bg, rgba(15, 23, 42, 0.72));
+  --auth-card-line: var(--pg-auth-card-line, rgba(148, 163, 184, 0.32));
+  --auth-control-bg: var(--pg-auth-control-bg, rgba(15, 23, 42, 0.62));
+  --auth-control-line: var(--pg-auth-control-line, rgba(148, 163, 184, 0.3));
+  --auth-control-focus: var(--pg-auth-control-focus, rgba(59, 130, 246, 0.7));
+  --auth-text: var(--pg-auth-text, #e2e8f0);
+  --auth-muted: var(--pg-auth-muted, #9fb0c9);
+  --auth-link: var(--pg-auth-link, #7dd3fc);
+  --auth-link-hover: var(--pg-auth-link-hover, #bae6fd);
+  --auth-error: var(--pg-auth-error, #fecaca);
+  --auth-error-bg: var(--pg-auth-error-bg, rgba(185, 28, 28, 0.22));
+  --auth-error-line: var(--pg-auth-error-line, rgba(248, 113, 113, 0.55));
+  --auth-success: var(--pg-auth-success, #bbf7d0);
+  --auth-success-bg: var(--pg-auth-success-bg, rgba(22, 101, 52, 0.25));
+  --auth-success-line: var(--pg-auth-success-line, rgba(74, 222, 128, 0.45));
   width: 100%;
   min-height: 100%;
   position: relative;
@@ -31,6 +31,34 @@
     radial-gradient(circle at 86% 14%, rgba(139, 92, 246, 0.2), transparent 44%),
     radial-gradient(circle at 50% 88%, rgba(8, 145, 178, 0.18), transparent 48%),
     linear-gradient(135deg, var(--auth-bg-start) 0%, var(--auth-bg-mid) 44%, var(--auth-bg-end) 100%);
+}
+
+@media (prefers-color-scheme: light) {
+  .auth-layout {
+    --auth-bg-start: var(--pg-auth-bg-start-light, #e8efff);
+    --auth-bg-mid: var(--pg-auth-bg-mid-light, #f4f8ff);
+    --auth-bg-end: var(--pg-auth-bg-end-light, #ffffff);
+    --auth-card-bg: var(--pg-auth-card-bg-light, rgba(255, 255, 255, 0.9));
+    --auth-card-line: var(--pg-auth-card-line-light, rgba(37, 99, 235, 0.2));
+    --auth-control-bg: var(--pg-auth-control-bg-light, rgba(255, 255, 255, 0.92));
+    --auth-control-line: var(--pg-auth-control-line-light, rgba(148, 163, 184, 0.6));
+    --auth-control-focus: var(--pg-auth-control-focus-light, rgba(37, 99, 235, 0.55));
+    --auth-text: var(--pg-auth-text-light, #0f172a);
+    --auth-muted: var(--pg-auth-muted-light, #334155);
+    --auth-link: var(--pg-auth-link-light, #0369a1);
+    --auth-link-hover: var(--pg-auth-link-hover-light, #0c4a6e);
+    --auth-error: var(--pg-auth-error-light, #b91c1c);
+    --auth-error-bg: var(--pg-auth-error-bg-light, rgba(254, 226, 226, 0.78));
+    --auth-error-line: var(--pg-auth-error-line-light, rgba(248, 113, 113, 0.55));
+    --auth-success: var(--pg-auth-success-light, #166534);
+    --auth-success-bg: var(--pg-auth-success-bg-light, rgba(220, 252, 231, 0.8));
+    --auth-success-line: var(--pg-auth-success-line-light, rgba(74, 222, 128, 0.4));
+  }
+
+  .auth-password-strength {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: var(--auth-card-line);
+  }
 }
 
 .auth-layout::before {
@@ -57,31 +85,25 @@
 
 .auth-brand {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: 24px;
+  left: 24px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid var(--auth-card-line);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--auth-card-bg) 75%, transparent 25%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .auth-brand-mark {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #f8fafc;
-  background: linear-gradient(125deg, #3b82f6, #1d4ed8);
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
 }
 
 .auth-brand-copy {
@@ -93,7 +115,7 @@
 }
 
 .auth-brand-copy strong {
-  color: #f8fafc;
+  color: var(--auth-text);
   font-size: 0.79rem;
   letter-spacing: 0.02em;
 }
@@ -109,7 +131,7 @@
   border-radius: 16px;
   padding: 22px;
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.68)),
+    linear-gradient(180deg, var(--auth-card-bg), var(--auth-control-bg)),
     radial-gradient(circle at top, rgba(59, 130, 246, 0.14), transparent 58%);
   box-shadow: 0 28px 58px rgba(2, 6, 23, 0.54);
   backdrop-filter: blur(12px);
@@ -146,7 +168,7 @@
 
 .auth-field-label {
   font-size: 0.85rem;
-  color: #d1d9e6;
+  color: color-mix(in srgb, var(--auth-text) 88%, white 12%);
 }
 
 .auth-field-control {
@@ -219,6 +241,100 @@
   margin: 0;
   font-size: 0.78rem;
   color: var(--auth-error);
+  animation: authFadeIn 0.2s ease both;
+}
+
+.auth-password-strength {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.auth-password-strength-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--auth-muted);
+}
+
+.auth-password-strength-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--auth-text);
+}
+
+.auth-password-strength-label.is-weak {
+  color: #fecaca;
+}
+
+.auth-password-strength-label.is-fair {
+  color: #fde68a;
+}
+
+.auth-password-strength-label.is-good {
+  color: #a7f3d0;
+}
+
+.auth-password-strength-label.is-strong {
+  color: #bbf7d0;
+}
+
+.auth-password-strength-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  overflow: hidden;
+}
+
+.auth-password-strength-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(248, 113, 113, 0.7);
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.auth-password-strength-fill.is-fair {
+  background: rgba(250, 204, 21, 0.7);
+}
+
+.auth-password-strength-fill.is-good {
+  background: rgba(74, 222, 128, 0.7);
+}
+
+.auth-password-strength-fill.is-strong {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+.auth-password-strength-list {
+  display: grid;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: var(--auth-muted);
+}
+
+.auth-password-strength-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-password-strength-item::before {
+  content: "•";
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.auth-password-strength-item.is-met {
+  color: var(--auth-success);
+}
+
+.auth-password-strength-item.is-met::before {
+  color: var(--auth-success);
 }
 
 .auth-primary-button {
@@ -322,6 +438,7 @@
   padding: 10px 12px;
   font-size: 0.84rem;
   border: 1px solid transparent;
+  animation: authFadeIn 0.2s ease both;
 }
 
 .auth-message.is-error {
@@ -351,6 +468,18 @@
 @keyframes authSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -22,6 +22,7 @@ import { useCanvasEffects } from '../hooks/useCanvasEffects';
 import { useCanvasUI } from '../hooks/useCanvasUI';
 import { useNodeGraph } from '../context/NodeGraphContext';
 import { computeLayersFromViewNode, type LayerInputData } from '../utils/computeLayerData';
+import { GlobalPromptOverlays } from './widget/GlobalPromptOverlays';
 
 const DEFAULT_BACKGROUND_STYLE = {
     cssBackground: '#1e1e1e',
@@ -939,6 +940,8 @@ export const NodeCanvas = forwardRef<NodeCanvasHandle, NodeCanvasProps>(({
                 nodes={nodes}
                 selectedNodeIds={selectedNodeIds}
             />
+
+            <GlobalPromptOverlays interactionMode={interactionMode} />
         </div >
     );
 });

@@ -84,7 +84,7 @@ const createSessionId = (): string => {
 };
 
 const createPromptPayPayload = (reference: string, amount: number): string => {
-  return `PROMPTPAY|merchant=PYGRASSREAL|reference=${reference}|amount=${amount.toFixed(2)}|currency=THB`;
+  return `PROMPTPAY|merchant=PYGRASSREAL|reference=${reference}|amount=${amount.toFixed(2)}|currency=USD`;
 };
 
 const findReusableSession = (

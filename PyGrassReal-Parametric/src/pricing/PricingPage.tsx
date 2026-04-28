@@ -1,40 +1,87 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { BillingToggle } from './components/BillingToggle';
 import { PlanCard } from './components/PlanCard';
-import { PlanComparison } from './components/PlanComparison';
-import { PLAN_COMPARISON_ROWS } from './config/plans';
-import { getEntitlementByUserId, resolvePricingUserId } from './services/entitlement.api';
+import { getEntitlementByUserId } from './services/entitlement.api';
 import { listPricingPlans } from './services/pricing.api';
+import { PRICING_PLANS } from './config/plans';
 import type { BillingCycle, PricingPlan, SubscriptionEntitlement } from './types/pricing.types';
+import { useProfile } from '../auth/hooks/useProfile';
 import './pricing.css';
 
 interface PricingPageProps {
   onNavigate: (path: string) => void;
 }
 
-const resolveInitialBillingCycle = (): BillingCycle => {
-  const query = new URLSearchParams(window.location.search);
-  return query.get('cycle') === 'yearly' ? 'yearly' : 'monthly';
+const SOURCE_ROUTE_MAP: Record<string, string> = {
+  settings: '/dashboard/settings',
+  dashboard: '/dashboard',
+  chat: '/dashboard/chat',
+  api: '/dashboard/api',
+  home: '/',
 };
 
-const toPlanLabel = (entitlement: SubscriptionEntitlement | null): string => {
-  if (!entitlement) return 'Current plan: Free';
-  const name = entitlement.plan_id.slice(0, 1).toUpperCase() + entitlement.plan_id.slice(1);
-  return `Current plan: ${name} Active`;
+const REFERRER_RETURN_PATHS = new Set<string>([
+  '/',
+  '/dashboard',
+  '/dashboard/chat',
+  '/dashboard/api',
+  '/dashboard/settings',
+]);
+
+const resolveInitialBillingCycle = (): BillingCycle => {
+  const query = new URLSearchParams(window.location.search);
+  const cycle = query.get('cycle');
+  if (cycle === 'yearly' || cycle === 'quarterly') return cycle;
+  return 'monthly';
+};
+
+const resolveRouteFromSource = (source: string | null): string | null => {
+  if (!source) {
+    return null;
+  }
+  return SOURCE_ROUTE_MAP[source] ?? null;
+};
+
+const resolveRouteFromReferrer = (): string | null => {
+  if (!document.referrer) {
+    return null;
+  }
+
+  try {
+    const referrerUrl = new URL(document.referrer);
+    if (referrerUrl.origin !== window.location.origin) {
+      return null;
+    }
+
+    const referrerPath = referrerUrl.pathname;
+    if (REFERRER_RETURN_PATHS.has(referrerPath)) {
+      return referrerPath;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 };
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [plans, setPlans] = useState<PricingPlan[]>(PRICING_PLANS);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(resolveInitialBillingCycle);
   const [entitlement, setEntitlement] = useState<SubscriptionEntitlement | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fromDashboard = new URLSearchParams(window.location.search).get('from') === 'dashboard';
-
-  const userId = useMemo(() => resolvePricingUserId(), []);
+  const profile = useProfile();
+  const userId = profile.id;
+  const fromSource = useMemo(() => {
+    const query = new URLSearchParams(window.location.search);
+    return query.get('from');
+  }, []);
 
   useEffect(() => {
+    if (profile.isLoading) {
+      return;
+    }
+
     let cancelled = false;
 
     const loadData = async () => {
@@ -42,7 +89,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       try {
         const [plansData, entitlementData] = await Promise.all([
           listPricingPlans(),
-          getEntitlementByUserId(userId),
+          userId ? getEntitlementByUserId(userId) : Promise.resolve(null),
         ]);
         if (!cancelled) {
           setPlans(plansData);
@@ -59,74 +106,70 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, profile.isLoading]);
 
   const handleChoosePlan = (planId: string) => {
     const selectedPlan = plans.find((plan) => plan.id === planId);
     if (!selectedPlan || selectedPlan.checkoutEnabled === false) {
       return;
     }
-    onNavigate(`/pricing/checkout?plan=${encodeURIComponent(planId)}&cycle=${billingCycle}`);
+    const fromParam = fromSource ? `&from=${encodeURIComponent(fromSource)}` : '';
+    onNavigate(`/pricing/checkout?plan=${encodeURIComponent(planId)}&cycle=${billingCycle}${fromParam}`);
+  };
+
+  const handleClose = () => {
+    const routeFromSource = resolveRouteFromSource(fromSource);
+    if (routeFromSource) {
+      onNavigate(routeFromSource);
+      return;
+    }
+
+    const routeFromReferrer = resolveRouteFromReferrer();
+    if (routeFromReferrer) {
+      onNavigate(routeFromReferrer);
+      return;
+    }
+
+    // Default fallback: If they are logged in and no fromSource, send them to dashboard, otherwise homepage
+    if (userId) {
+      onNavigate('/dashboard');
+    } else {
+      onNavigate('/');
+    }
   };
 
   return (
     <div className="pricing-page">
-      <div className="pricing-shell">
-        <header className="pricing-topbar">
-          <h2 className="pricing-brand">
-            Pricing & Checkout
-            <small>{toPlanLabel(entitlement)}</small>
-          </h2>
-          <div className="pricing-top-actions">
-            <button type="button" className="pricing-top-button" onClick={() => onNavigate('/dashboard')}>
-              <LayoutDashboard size={15} />
-              Dashboard
-            </button>
-            <button type="button" className="pricing-top-button" onClick={() => onNavigate('/')}>
-              <ArrowLeft size={15} />
-              Home
-            </button>
-          </div>
-        </header>
+      <button
+        type="button"
+        className="pricing-close-floating"
+        onClick={handleClose}
+        aria-label="Close subscription"
+        title="Close"
+      >
+        <span className="pricing-close-glyph" aria-hidden="true">
+          X
+        </span>
+      </button>
 
-        <section className="pricing-hero-card">
-          <span className="pricing-hero-eyebrow">Subscription plans</span>
-          <h1>Choose a plan that matches your modeling workflow.</h1>
-          <p>
-            Upgrade in minutes. Start checkout with PromptPay QR and your entitlement will be activated as soon as
-            payment is confirmed.
-          </p>
-          <div className="pricing-billing-row">
-            {fromDashboard ? (
-              <p className="pricing-from-dashboard">You came from Dashboard. Pick a plan to continue the upgrade.</p>
-            ) : (
-              <span />
-            )}
+      <div className="pricing-shell">
+        <section className="pricing-hero-card pricing-hero-card--compact">
+          <div className="pricing-billing-row pricing-billing-row--compact">
             <BillingToggle value={billingCycle} onChange={setBillingCycle} />
           </div>
         </section>
 
-        {isLoading ? (
-          <section className="pricing-hero-card">
-            <p>Loading pricing plans...</p>
-          </section>
-        ) : (
-          <>
-            <section className="pricing-plan-grid">
-              {plans.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  billingCycle={billingCycle}
-                  onChoosePlan={handleChoosePlan}
-                  isCurrentPlan={entitlement ? entitlement.plan_id === plan.id : plan.id === 'free'}
-                />
-              ))}
-            </section>
-
-            <PlanComparison plans={plans} rows={PLAN_COMPARISON_ROWS} />
-          </>
-        )}
+        <section className="pricing-plan-grid">
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              billingCycle={billingCycle}
+              onChoosePlan={handleChoosePlan}
+              isCurrentPlan={entitlement ? entitlement.plan_id === plan.id : plan.id === 'free'}
+            />
+          ))}
+        </section>
       </div>
     </div>
   );

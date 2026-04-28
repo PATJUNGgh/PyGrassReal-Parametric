@@ -1,39 +1,61 @@
-import { Building2, Lightbulb, Package } from 'lucide-react';
-
-const USE_CASES = [
-  {
-    title: 'Architecture',
-    description: 'Prototype form studies, facade logic, and parametric massing concepts quickly.',
-    icon: Building2,
-  },
-  {
-    title: 'Product Design',
-    description: 'Iterate shape variants and material options before detailed CAD refinement.',
-    icon: Package,
-  },
-  {
-    title: 'Concept Modeling',
-    description: 'Blend manual node control with AI prompts for fast, creative exploration.',
-    icon: Lightbulb,
-  },
-];
+import { useMemo } from 'react';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { useUseCaseItems } from '../hooks/usePageData';
+import { Section } from './Section';
 
 export function UseCaseGrid() {
+  const { language } = useLanguage();
+  const { data: useCases, isLoading } = useUseCaseItems();
+
+  const localizedUseCases = useMemo(
+    () =>
+      useCases.map((useCase) => ({
+        ...useCase,
+        title: localizeText(language, useCase.title),
+        description: localizeText(language, useCase.description),
+      })),
+    [language, useCases]
+  );
+
   return (
-    <section className="pg-section pg-fade-up pg-delay-2">
-      <div className="pg-section-heading">
-        <h2>Use Cases</h2>
-        <p>Built for teams and creators working across design disciplines.</p>
-      </div>
+    <Section
+      telemetryId="landing.use_cases"
+      delay={2}
+      title={localizeText(language, {
+        th: 'ตัวอย่างการใช้งาน',
+        en: 'Use Cases',
+      })}
+      description={localizeText(language, {
+        th: 'ออกแบบมาสำหรับทีมและครีเอเตอร์ที่ทำงานข้ามสายงานออกแบบ',
+        en: 'Built for teams and creators working across design disciplines.',
+      })}
+    >
       <div className="pg-usecase-grid">
-        {USE_CASES.map((useCase) => (
-          <article key={useCase.title} className="pg-usecase-card">
-            <useCase.icon size={20} aria-hidden="true" />
-            <h3>{useCase.title}</h3>
-            <p>{useCase.description}</p>
-          </article>
-        ))}
+        {isLoading && localizedUseCases.length === 0
+          ? Array.from({ length: 3 }, (_, index) => (
+              <article key={`use-case-loading-${index}`} className="pg-usecase-card is-loading" aria-hidden="true">
+                <h3>
+                  {localizeText(language, {
+                    th: 'กำลังโหลดตัวอย่าง...',
+                    en: 'Loading use cases...',
+                  })}
+                </h3>
+                <p>
+                  {localizeText(language, {
+                    th: 'กำลังเตรียมข้อมูลการใช้งาน',
+                    en: 'Preparing use case data.',
+                  })}
+                </p>
+              </article>
+            ))
+          : localizedUseCases.map((useCase, index) => (
+              <article key={`${useCase.title}-${index}`} className="pg-usecase-card">
+                <useCase.icon size={20} aria-hidden="true" />
+                <h3>{useCase.title}</h3>
+                <p>{useCase.description}</p>
+              </article>
+            ))}
       </div>
-    </section>
+    </Section>
   );
 }

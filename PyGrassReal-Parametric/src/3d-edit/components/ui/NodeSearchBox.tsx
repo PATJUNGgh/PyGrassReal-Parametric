@@ -1,34 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeData } from '../../types/NodeTypes';
-import { NODE_DEFINITIONS } from '../../definitions/nodeDefinitions';
-import { HIDDEN_NODES } from '../../definitions/hiddenNodes';
-import { NODE_CATEGORIES, WIDGET_CATEGORIES, type NodeCategory } from '../../definitions/nodeCategories';
+import {
+    getSearchableNodes,
+    getSearchCategories,
+    type SearchableNodeEntry,
+    type CategoryEntry,
+} from '../../graph/searchPolicy';
 import './NodeSearchBox.css';
-
-interface SearchableNode {
-    type: NodeData['type'];
-    name: string;
-}
 
 interface CategorizedSection {
     id: string;
     label: string;
-    nodes: SearchableNode[];
+    nodes: SearchableNodeEntry[];
     defaultExpanded: boolean;
 }
 
-const SEARCH_EXCLUDED_NODE_TYPES = new Set<NodeData['type']>(['group', 'component']);
-
-const SEARCHABLE_NODES: SearchableNode[] = Object.values(NODE_DEFINITIONS)
-    .filter((def) => !HIDDEN_NODES.includes(def.type) && !SEARCH_EXCLUDED_NODE_TYPES.has(def.type))
-    .map((def) => ({
-        type: def.type,
-        name: def.name,
-    }));
-
 const buildCategorySections = (
-    nodes: SearchableNode[],
-    categories: NodeCategory[]
+    nodes: SearchableNodeEntry[],
+    categories: CategoryEntry[]
 ): CategorizedSection[] => {
     const nodeMap = new Map(nodes.map((node) => [node.type, node]));
     const sections: CategorizedSection[] = [];
@@ -38,7 +27,7 @@ const buildCategorySections = (
             .map((nodeType) => {
                 return nodeMap.get(nodeType);
             })
-            .filter((node): node is SearchableNode => !!node);
+            .filter((node): node is SearchableNodeEntry => !!node);
 
         if (categoryNodes.length === 0) {
             continue;
@@ -83,52 +72,23 @@ export const NodeSearchBox: React.FC<NodeSearchBoxProps> = ({
     const middleDragStartYRef = useRef(0);
     const middleDragStartScrollRef = useRef(0);
 
-    const categoryConfig = useMemo(() => {
-        if (categoryMode === 'nodes') {
-            return NODE_CATEGORIES;
-        }
-        if (categoryMode === 'widget') {
-            return WIDGET_CATEGORIES;
-        }
+    const searchPolicyContext = useMemo(
+        () => ({
+            allowedTypes,
+            categoryMode,
+        }),
+        [allowedTypes, categoryMode]
+    );
 
-        const seenNodeTypes = new Set<NodeData['type']>();
-        const mergedCategories: NodeCategory[] = [];
+    const categoryConfig = useMemo(
+        () => getSearchCategories(searchPolicyContext),
+        [searchPolicyContext]
+    );
 
-        const pushCategory = (category: NodeCategory) => {
-            const uniqueNodeTypes = category.nodeTypes.filter((nodeType) => {
-                if (seenNodeTypes.has(nodeType)) {
-                    return false;
-                }
-                seenNodeTypes.add(nodeType);
-                return true;
-            });
-
-            if (uniqueNodeTypes.length === 0) {
-                return;
-            }
-
-            mergedCategories.push({
-                ...category,
-                nodeTypes: uniqueNodeTypes,
-            });
-        };
-
-        NODE_CATEGORIES.forEach(pushCategory);
-        WIDGET_CATEGORIES.forEach(pushCategory);
-
-        return mergedCategories;
-    }, [categoryMode]);
-
-    const baseNodes = useMemo(() => {
-        if (!allowedTypes || allowedTypes.length === 0) {
-            return SEARCHABLE_NODES;
-        }
-
-        const searchableNodeMap = new Map(SEARCHABLE_NODES.map((node) => [node.type, node]));
-        return allowedTypes
-            .map((type) => searchableNodeMap.get(type as NodeData['type']))
-            .filter((node): node is SearchableNode => !!node);
-    }, [allowedTypes]);
+    const baseNodes = useMemo(
+        () => getSearchableNodes(searchPolicyContext),
+        [searchPolicyContext]
+    );
 
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
     const hasSearch = normalizedSearchTerm.length > 0;
@@ -182,7 +142,7 @@ export const NodeSearchBox: React.FC<NodeSearchBoxProps> = ({
             return filteredNodes;
         }
 
-        const nodes: SearchableNode[] = [];
+        const nodes: SearchableNodeEntry[] = [];
 
         visibleSections.forEach((section) => {
             if (effectiveExpandedCategories[section.id]) {

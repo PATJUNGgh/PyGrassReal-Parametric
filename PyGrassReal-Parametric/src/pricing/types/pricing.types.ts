@@ -1,4 +1,4 @@
-export type BillingCycle = 'monthly' | 'yearly';
+export type BillingCycle = 'monthly' | 'quarterly' | 'yearly';
 
 export interface PlanComparisonRow {
   id: string;
@@ -11,7 +11,7 @@ export interface PricingPlan {
   description: string;
   monthlyPrice: number;
   yearlyPrice: number;
-  currency: 'THB';
+  currency: 'USD';
   checkoutEnabled?: boolean;
   badge?: string;
   recommended?: boolean;
@@ -29,7 +29,7 @@ export interface CheckoutSession {
   plan_id: string;
   billing_cycle: BillingCycle;
   amount: number;
-  currency: 'THB';
+  currency: 'USD';
   payment_method: PaymentMethod;
   status: CheckoutStatus;
   qr_payload: string;

@@ -1,4 +1,6 @@
 import React from 'react';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { MODAL_UI } from '../data/dashboardData';
 
 interface WorkflowInlineEditProps {
   draftName: string;
@@ -15,36 +17,41 @@ export const WorkflowInlineEdit: React.FC<WorkflowInlineEditProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { language } = useLanguage();
+
+  const handleAction = (e: React.MouseEvent | React.KeyboardEvent, action: () => void) => {
+    e.stopPropagation();
+    action();
+  };
+
   return (
-    <div className="workflow-inline-edit" onClick={(event) => event.stopPropagation()}>
+    <div className="workflow-inline-edit" onClick={(e) => e.stopPropagation()}>
       <input
         type="text"
         value={draftName}
-        onChange={(event) => onNameChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') onSave();
-          if (event.key === 'Escape') onCancel();
+        onChange={(e) => onNameChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleAction(e, onSave);
+          if (e.key === 'Escape') handleAction(e, onCancel);
         }}
         aria-label="Workflow name"
         autoFocus
         disabled={isSaving}
+        maxLength={100}
       />
       <button 
         type="button" 
-        onClick={(e) => { e.stopPropagation(); onSave(); }} 
+        onClick={(e) => handleAction(e, onSave)} 
         disabled={isSaving}
       >
-        {isSaving ? 'Saving...' : 'Save'}
+        {isSaving ? localizeText(language, MODAL_UI.saving) : localizeText(language, MODAL_UI.save)}
       </button>
       <button
         type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onCancel();
-        }}
+        onClick={(e) => handleAction(e, onCancel)}
         disabled={isSaving}
       >
-        Cancel
+        {localizeText(language, MODAL_UI.cancel)}
       </button>
     </div>
   );

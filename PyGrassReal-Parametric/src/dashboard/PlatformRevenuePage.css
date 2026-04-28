@@ -1,0 +1,822 @@
+.platform-revenue-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  color: #e5f2ff;
+}
+
+.platform-revenue-header,
+.platform-revenue-panel,
+.platform-revenue-state {
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(14, 165, 233, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(10, 18, 28, 0.96), rgba(15, 23, 42, 0.92));
+  box-shadow: 0 18px 44px rgba(2, 8, 23, 0.26);
+}
+
+.platform-revenue-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 26px;
+  border-radius: 22px;
+}
+
+.platform-revenue-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.platform-revenue-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: #7dd3fc;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.platform-revenue-header h1,
+.platform-revenue-panel h2,
+.platform-revenue-state h1 {
+  margin: 0;
+  color: #f8fbff;
+}
+
+.platform-revenue-header h1 {
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  letter-spacing: -0.04em;
+}
+
+.platform-revenue-header p:not(.platform-revenue-eyebrow),
+.platform-revenue-panel-head p,
+.platform-revenue-muted,
+.platform-revenue-state p {
+  margin: 8px 0 0;
+  color: #a7bed3;
+  line-height: 1.55;
+}
+
+.platform-revenue-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  border: 1px solid rgba(125, 211, 252, 0.34);
+  border-radius: 999px;
+  padding: 0 16px;
+  color: #e0f7ff;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(34, 197, 94, 0.14));
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.platform-revenue-refresh:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(125, 211, 252, 0.62);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.22);
+}
+
+.platform-revenue-refresh:disabled {
+  opacity: 0.68;
+  cursor: wait;
+}
+
+.platform-revenue-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: #9cc5db;
+  font-size: 0.9rem;
+}
+
+.platform-revenue-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.platform-revenue-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 16px;
+  padding: 13px 15px;
+  color: #fde68a;
+  background: rgba(113, 63, 18, 0.26);
+}
+
+.platform-revenue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.platform-revenue-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 128px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  padding: 18px;
+  background:
+    linear-gradient(140deg, rgba(15, 23, 42, 0.88), rgba(8, 47, 73, 0.42)),
+    rgba(15, 23, 42, 0.86);
+}
+
+.platform-revenue-card-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  color: #67e8f9;
+  background: rgba(8, 145, 178, 0.2);
+}
+
+.platform-revenue-card span,
+.platform-revenue-card small {
+  display: block;
+  color: #a5bdd3;
+}
+
+.platform-revenue-card span {
+  font-size: 0.83rem;
+  font-weight: 800;
+}
+
+.platform-revenue-card strong {
+  display: block;
+  margin-top: 5px;
+  color: #ffffff;
+  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  letter-spacing: -0.04em;
+}
+
+.platform-revenue-card small {
+  margin-top: 7px;
+  font-size: 0.78rem;
+}
+
+.platform-revenue-panel {
+  border-radius: 20px;
+  padding: 22px;
+}
+
+.platform-revenue-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.platform-revenue-panel h2 {
+  font-size: 1.12rem;
+}
+
+.platform-revenue-test-panel {
+  border-color: rgba(34, 197, 94, 0.22);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(34, 197, 94, 0.16), transparent 28%),
+    radial-gradient(circle at 88% 16%, rgba(14, 165, 233, 0.14), transparent 28%),
+    linear-gradient(145deg, rgba(8, 13, 22, 0.98), rgba(15, 23, 42, 0.92));
+}
+
+.platform-revenue-subscribers-panel {
+  border-color: rgba(125, 211, 252, 0.24);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(14, 165, 233, 0.18), transparent 30%),
+    linear-gradient(145deg, rgba(8, 13, 22, 0.98), rgba(8, 47, 73, 0.54));
+}
+
+.platform-revenue-subscriber-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.platform-revenue-subscriber-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #a7bed3;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.platform-revenue-subscriber-form input {
+  min-height: 38px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 12px;
+  padding: 0 11px;
+  color: #f8fbff;
+  background: rgba(15, 23, 42, 0.82);
+  outline: none;
+}
+
+.platform-revenue-subscriber-form input:focus {
+  border-color: rgba(103, 232, 249, 0.58);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.platform-revenue-subscribers-table {
+  min-width: 920px;
+}
+
+.platform-revenue-email-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.platform-revenue-email-cell > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-revenue-copy-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 999px;
+  padding: 0 10px;
+  color: #dff7ff;
+  background: rgba(14, 165, 233, 0.12);
+  font-size: 0.76rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.platform-revenue-copy-button:hover {
+  border-color: rgba(103, 232, 249, 0.5);
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.platform-revenue-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.platform-revenue-test-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  color: #b8d4e8;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.platform-revenue-test-secondary,
+.platform-revenue-test-danger,
+.platform-revenue-test-pay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 0 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.platform-revenue-test-secondary {
+  border: 1px solid rgba(125, 211, 252, 0.32);
+  color: #e0f7ff;
+  background: rgba(14, 165, 233, 0.14);
+}
+
+.platform-revenue-test-danger {
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fee2e2;
+  background: rgba(185, 28, 28, 0.14);
+}
+
+.platform-revenue-test-danger:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.platform-revenue-test-note,
+.platform-revenue-test-message,
+.platform-revenue-test-error {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 14px;
+  padding: 11px 13px;
+  font-size: 0.86rem;
+}
+
+.platform-revenue-test-note {
+  margin-bottom: 14px;
+  color: #fde68a;
+  background: rgba(113, 63, 18, 0.22);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
+
+.platform-revenue-test-message {
+  margin: 0 0 12px;
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.22);
+}
+
+.platform-revenue-test-error {
+  margin: 0 0 12px;
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.22);
+}
+
+.platform-revenue-test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.platform-revenue-test-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  padding: 15px;
+  background: rgba(8, 13, 22, 0.54);
+}
+
+.platform-revenue-test-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.platform-revenue-test-card-head strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f8fbff;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-revenue-test-remove {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid rgba(248, 113, 113, 0.26);
+  border-radius: 999px;
+  padding: 0 10px;
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.14);
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.platform-revenue-test-remove:hover {
+  transform: translateY(-1px);
+}
+
+.platform-revenue-test-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed rgba(148, 163, 184, 0.26);
+  border-radius: 16px;
+  padding: 18px;
+  color: #9fb9d0;
+  text-align: center;
+  background: rgba(8, 13, 22, 0.36);
+}
+
+.platform-revenue-test-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #a7bed3;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.platform-revenue-test-card input,
+.platform-revenue-test-card select {
+  min-height: 38px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 12px;
+  padding: 0 11px;
+  color: #f8fbff;
+  background: rgba(15, 23, 42, 0.82);
+  outline: none;
+}
+
+.platform-revenue-test-card input:focus,
+.platform-revenue-test-card select:focus {
+  border-color: rgba(103, 232, 249, 0.58);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.platform-revenue-test-email-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.platform-revenue-test-email-ok {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 0.78rem;
+}
+
+.platform-revenue-test-credit {
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 12px;
+  padding: 10px 11px;
+  background: rgba(8, 47, 73, 0.22);
+}
+
+.platform-revenue-test-credit span {
+  display: block;
+  color: #9fb9d0;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.platform-revenue-test-credit strong {
+  display: block;
+  margin-top: 5px;
+  color: #86efac;
+  font-size: 1rem;
+}
+
+.platform-revenue-test-credit.is-error strong {
+  color: #fecaca;
+}
+
+.platform-revenue-test-credit-error {
+  margin-top: -6px;
+  color: #fca5a5;
+  font-size: 0.74rem;
+}
+
+.platform-revenue-test-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 10px;
+}
+
+.platform-revenue-test-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.platform-revenue-test-split span {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  padding: 10px;
+  color: #9fb9d0;
+  background: rgba(15, 23, 42, 0.58);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.platform-revenue-test-split strong {
+  display: block;
+  margin-top: 5px;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.platform-revenue-test-pay {
+  width: 100%;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #dcfce7;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.26), rgba(14, 165, 233, 0.18));
+}
+
+.platform-revenue-test-pay:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.platform-revenue-test-pay:hover,
+.platform-revenue-test-secondary:hover,
+.platform-revenue-test-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.platform-revenue-chart-panel {
+  background:
+    radial-gradient(circle at 80% 8%, rgba(103, 232, 249, 0.16), transparent 28%),
+    radial-gradient(circle at 12% 82%, rgba(251, 191, 36, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(8, 13, 22, 0.98), rgba(8, 47, 73, 0.66));
+}
+
+.platform-revenue-chart-wrap {
+  width: 100%;
+  height: 360px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 18px;
+  padding: 14px 10px 8px 4px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(8, 13, 22, 0.54)),
+    rgba(8, 13, 22, 0.46);
+}
+
+.platform-revenue-chart-empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 220px;
+  border: 1px dashed rgba(148, 163, 184, 0.26);
+  border-radius: 18px;
+  color: #9fb9d0;
+  background: rgba(8, 13, 22, 0.36);
+}
+
+.platform-revenue-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.platform-revenue-plan-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 16px;
+  padding: 14px 15px;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.platform-revenue-plan-chip span {
+  color: #b8d4e8;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.platform-revenue-plan-chip strong {
+  color: #86efac;
+  font-size: 1.35rem;
+}
+
+.platform-revenue-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+}
+
+.platform-revenue-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  background: rgba(8, 13, 22, 0.55);
+}
+
+.platform-revenue-table th,
+.platform-revenue-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  white-space: nowrap;
+}
+
+.platform-revenue-table th {
+  color: #88d8f7;
+  background: rgba(8, 47, 73, 0.45);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.platform-revenue-table td {
+  color: #dbeafe;
+  font-size: 0.9rem;
+}
+
+.platform-revenue-table tbody tr:hover {
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.platform-revenue-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.platform-revenue-table .is-money {
+  color: #86efac;
+  font-weight: 900;
+}
+
+.platform-revenue-table .is-openrouter-cost {
+  color: #fbbf24;
+  font-weight: 900;
+}
+
+.platform-revenue-table .is-platform-net {
+  color: #67e8f9;
+  font-weight: 900;
+}
+
+.platform-revenue-payments-table {
+  min-width: 860px;
+}
+
+.platform-revenue-empty-row {
+  color: #9fb9d0;
+  text-align: center;
+}
+
+.platform-revenue-source-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.platform-revenue-source-badge.is-subscription {
+  color: #bfdbfe;
+  background: rgba(37, 99, 235, 0.22);
+  border: 1px solid rgba(96, 165, 250, 0.28);
+}
+
+.platform-revenue-source-badge.is-credit_topup {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+}
+
+.platform-revenue-settlement-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 11px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.platform-revenue-settlement-badge.is-paid {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.platform-revenue-settlement-badge.is-unpaid {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.2);
+  border: 1px solid rgba(248, 113, 113, 0.32);
+}
+
+.platform-revenue-settlement-badge.is-not_required {
+  color: #cbd5e1;
+  background: rgba(71, 85, 105, 0.24);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.platform-revenue-paid-at {
+  display: block;
+  margin-top: 5px;
+  color: #8aa7bd;
+}
+
+.platform-revenue-settlement-btn {
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.platform-revenue-settlement-btn.is-unpaid {
+  border: 1px solid rgba(74, 222, 128, 0.34);
+  color: #dcfce7;
+  background: rgba(22, 163, 74, 0.18);
+}
+
+.platform-revenue-settlement-btn.is-paid {
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fee2e2;
+  background: rgba(185, 28, 28, 0.15);
+}
+
+.platform-revenue-settlement-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.platform-revenue-settlement-btn:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+
+.platform-revenue-action-fallback {
+  color: #64748b;
+}
+
+.platform-revenue-state {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 320px;
+  border-radius: 22px;
+  padding: 28px;
+  text-align: center;
+}
+
+.platform-revenue-state.is-error {
+  border-color: rgba(248, 113, 113, 0.36);
+}
+
+.platform-revenue-spin {
+  animation: platformRevenueSpin 0.85s linear infinite;
+}
+
+@keyframes platformRevenueSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1080px) {
+  .platform-revenue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .platform-revenue-header,
+  .platform-revenue-panel {
+    padding: 18px;
+  }
+
+  .platform-revenue-header {
+    flex-direction: column;
+  }
+
+  .platform-revenue-header-actions {
+    width: 100%;
+  }
+
+  .platform-revenue-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .platform-revenue-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-revenue-chart-wrap {
+    height: 300px;
+  }
+
+  .platform-revenue-test-actions,
+  .platform-revenue-test-secondary,
+  .platform-revenue-test-danger {
+    width: 100%;
+  }
+
+  .platform-revenue-subscriber-form {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-revenue-test-row,
+  .platform-revenue-test-split {
+    grid-template-columns: 1fr;
+  }
+}

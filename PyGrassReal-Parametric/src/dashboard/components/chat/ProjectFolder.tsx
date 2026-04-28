@@ -1,6 +1,9 @@
 import React from 'react';
-import { Folder, Trash2 } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import type { ChatProject } from '../../types/chat.types';
+import { localizeText, useLanguage } from '../../../i18n/language';
+import { CHAT_HISTORY_UI } from '../../data/chatData';
+import { HistoryActionBtn } from './HistoryActionBtn';
 
 interface ProjectFolderProps {
   project: ChatProject;
@@ -11,14 +14,16 @@ interface ProjectFolderProps {
   onDrop: (e: React.DragEvent, id: string) => void;
 }
 
-export const ProjectFolder: React.FC<ProjectFolderProps> = ({
+export const ProjectFolder = React.memo(({
   project,
   itemCount,
   confirmingDeleteProjectId,
   onOpen,
   onDelete,
   onDrop,
-}) => {
+}: ProjectFolderProps) => {
+  const { language } = useLanguage();
+
   return (
     <div
       className="project-folder"
@@ -28,25 +33,21 @@ export const ProjectFolder: React.FC<ProjectFolderProps> = ({
     >
       <div className="project-folder-header">
         <div className="project-folder-title">
-          <Folder size={12} style={{ color: '#bae6fd' }} />
+          <Folder size={12} className="folder-icon-accent" />
           <span>{project.name}</span>
-          <span className="project-item-count">{itemCount} files</span>
+          <span className="project-item-count">{localizeText(language, CHAT_HISTORY_UI.filesCount(itemCount))}</span>
         </div>
         <div className="project-folder-actions">
-          <button
-            className={`action-btn delete-btn project-delete-btn ${confirmingDeleteProjectId === project.id ? 'confirming' : ''}`}
-            onClick={(e) => onDelete(e, project.id)}
-            title={confirmingDeleteProjectId === project.id ? 'Click again to confirm' : 'Delete project'}
-            type="button"
-          >
-            {confirmingDeleteProjectId === project.id ? (
-              <span className="confirm-text">Confirm</span>
-            ) : (
-              <Trash2 size={12} />
-            )}
-          </button>
+          <HistoryActionBtn 
+            itemId={project.id}
+            confirmingId={confirmingDeleteProjectId}
+            onDelete={onDelete}
+            type="project"
+          />
         </div>
       </div>
     </div>
   );
-};
+});
+
+ProjectFolder.displayName = 'ProjectFolder';

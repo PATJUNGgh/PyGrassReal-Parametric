@@ -1,79 +1,88 @@
-import logoIcon from '../assets/logo-icon.png';
+import { useState } from 'react';
+import { useAuthSession } from '../auth/hooks/useAuthSession';
+import { localizeText, useLanguage } from '../i18n/language';
+import { DocumentationSidebar } from './components/DocumentationSidebarOverlay';
+import { MainLayout } from './components/MainLayout';
+import { RoadmapCard } from './components/RoadmapCard';
+import { Section } from './components/Section';
+import { SubHero } from './components/SubHero';
+import { getTopbarNavigation } from './config/navigation';
+import { useRoadmapItems } from './hooks/usePageData';
 import './pages.css';
 
 interface AboutPageProps {
   onNavigate: (path: string) => void;
 }
 
-const ROADMAP_ITEMS = [
-  {
-    quarter: 'Q1',
-    title: 'Core Node Canvas',
-    description: 'Refine graph interactions, snapping, and component stability for daily production use.',
-  },
-  {
-    quarter: 'Q2',
-    title: 'AI Sculpt + Paint',
-    description: 'Introduce guided prompts and brush pipelines for rapid concept exploration.',
-  },
-  {
-    quarter: 'Q3',
-    title: 'Team Workflows',
-    description: 'Add shared presets, versioned workflows, and cloud-ready project handoff.',
-  },
-];
-
 export default function AboutPage({ onNavigate }: AboutPageProps) {
+  const { language } = useLanguage();
+  const { data: roadmapItems, isLoading } = useRoadmapItems();
+  const { isAuthenticated } = useAuthSession();
+  const topbarItems = getTopbarNavigation('about', language, isAuthenticated);
+  const [sidebarQuery, setSidebarQuery] = useState('');
   return (
-    <div className="pg-page pg-subpage">
-      <div className="pg-background-glow" aria-hidden="true" />
-      <div className="pg-background-grid" aria-hidden="true" />
-      <div className="pg-background-dots" aria-hidden="true" />
+    <MainLayout
+      onNavigate={onNavigate}
+      className="pg-subpage"
+      topbarItems={topbarItems}
+      isAuthenticated={isAuthenticated}
+      pageTitle={localizeText(language, {
+        th: 'เกี่ยวกับ',
+        en: 'About',
+      })}
+      pageDescription={localizeText(language, {
+        th: 'วิสัยทัศน์และแผนพัฒนาแพลตฟอร์ม PyGrassReal-Ai',
+        en: 'Vision and product roadmap for PyGrassReal-Ai.',
+      })}
+    >
+      <main className="pg-main pg-main-doc-shell">
+        <DocumentationSidebar
+          activeSection="about"
+          searchValue={sidebarQuery}
+          onSearchValueChange={setSidebarQuery}
+          searchPlaceholder={localizeText(language, {
+            th: 'Try: roadmap',
+            en: 'Try: roadmap',
+          })}
+        />
 
-      <header className="pg-topbar">
-        <button type="button" className="pg-brand" onClick={() => onNavigate('/')}>
-          <img src={logoIcon} alt="PyGrassReal-Ai Logo" className="pg-brand-logo" />
-          <span>PyGrassReal-Ai</span>
-        </button>
-        <nav className="pg-topnav" aria-label="About navigation">
-          <button type="button" onClick={() => onNavigate('/docs')}>
-            Docs
-          </button>
-          <button type="button" onClick={() => onNavigate('/dashboard')}>
-            Dashboard
-          </button>
-          <button type="button" className="pg-topnav-cta" onClick={() => onNavigate('/editor')}>
-            Open Editor
-          </button>
-        </nav>
-      </header>
+        <div className="pg-doc-shell-content">
+          <SubHero
+            chip={localizeText(language, { th: 'วิสัยทัศน์', en: 'Vision' })}
+            title={localizeText(language, {
+              th: 'การสร้างงานแบบพาราเมตริก โดยมี AI เป็นผู้ช่วยออกแบบ',
+              en: 'Parametric creation with AI as a design copilot.',
+            })}
+            description={localizeText(language, {
+              th: 'PyGrassReal-Ai ผสานการขึ้นโมเดลแบบโหนดกับการสร้างงานด้วย AI เพื่อพานักออกแบบจากไอเดียไปสู่ผลลัพธ์ 3D ที่แก้ไขได้เร็วขึ้น',
+              en: 'PyGrassReal-Ai combines node-based modeling with AI-assisted generation to help designers move from idea to editable 3D outputs faster.',
+            })}
+          />
 
-      <main className="pg-main pg-main-tight">
-        <section className="pg-sub-hero pg-fade-up">
-          <span className="pg-chip">Vision</span>
-          <h1>Parametric creation with AI as a design copilot.</h1>
-          <p>
-            PyGrassReal-Ai combines node-based modeling with AI-assisted generation to help designers move from idea
-            to editable 3D outputs faster.
-          </p>
-        </section>
-
-        <section className="pg-section pg-fade-up pg-delay-1">
-          <div className="pg-section-heading">
-            <h2>Roadmap</h2>
-            <p>High-level milestones for the next iterations.</p>
-          </div>
-          <div className="pg-roadmap-grid">
-            {ROADMAP_ITEMS.map((item) => (
-              <article key={item.title} className="pg-roadmap-card">
-                <span className="pg-roadmap-quarter">{item.quarter}</span>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+          <Section
+            id="about-roadmap-section"
+            telemetryId="about.roadmap"
+            delay={1}
+            title={localizeText(language, {
+              th: 'Roadmap',
+              en: 'Roadmap',
+            })}
+            description={localizeText(language, {
+              th: 'หมุดหมายระดับภาพรวมสำหรับการพัฒนารุ่นถัดไป',
+              en: 'High-level milestones for the next iterations.',
+            })}
+          >
+            <div className="pg-roadmap-grid">
+              {isLoading && roadmapItems.length === 0
+                ? Array.from({ length: 3 }, (_, index) => (
+                    <article key={`roadmap-loading-${index}`} className="pg-roadmap-card is-loading" aria-hidden="true" />
+                  ))
+                : roadmapItems.map((item) => <RoadmapCard key={item.quarter} item={item} />)}
+            </div>
+          </Section>
+        </div>
       </main>
-    </div>
+    </MainLayout>
   );
 }
+

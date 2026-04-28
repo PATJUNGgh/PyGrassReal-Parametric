@@ -104,6 +104,13 @@ export const useNodeOperations = ({
             sceneObjectId: isSceneLinkedType ? newId : undefined,
         };
 
+        if (type === 'ai-agent') {
+            initialNodeData = {
+                ...initialNodeData,
+                isNewAiAgent: options?.initialData?.isNewAiAgent ?? true,
+            };
+        }
+
         // Auto-add input logic for Layer Source on creation
         if (type === 'layer-source' && options?.initialConnections) {
             const currentInputs = initialNodeData.inputs || [];

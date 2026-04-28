@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeData } from '../types/NodeTypes';
+import { hitTestNode } from '../interaction/hitTestPolicy';
+import { shouldDeselect, shouldStartDrag, shouldStartSelectionBox } from '../interaction/interactionPolicy';
 
 interface UseCanvasInteractionProps {
     canvasRef: React.RefObject<HTMLDivElement>;
@@ -52,11 +54,12 @@ export function useCanvasInteraction({
 
     const onClick = useCallback((e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        const isBackground = target.classList.contains('node-canvas') || target.closest('.grid-background');
-        const isUIControl = target.closest('button, input, label, select, .node-port, .node-action-bar');
-        const isNode = target.closest('.custom-node-base, .widget-window-node-base, .group-node-base');
-
-        if (!isBackground || isUIControl || isNode) return;
+        const hitResult = hitTestNode(
+            { x: e.clientX, y: e.clientY },
+            { element: target }
+        );
+        if (hitResult.hit) return;
+        if (!shouldDeselect(target, e)) return;
 
         // Threshold to distinguish click from drag panning
         const dist = Math.sqrt(Math.pow(e.clientX - mouseDownPos.x, 2) + Math.pow(e.clientY - mouseDownPos.y, 2));
@@ -72,15 +75,17 @@ export function useCanvasInteraction({
 
     const onMouseDown = useCallback((e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        const isNoSelectionElement = target.closest('[data-no-selection="true"]');
-        const isUIControl = target.closest('button, input, label, select, .node-port, .node-action-bar');
-        if (isNoSelectionElement || isUIControl) return;
+        if (!shouldStartDrag(target, e)) return;
 
         setMouseDownPos({ x: e.clientX, y: e.clientY });
 
         if (handlePanStart(e)) return;
 
-        if (e.button === 0 && !e.altKey && canvasRef.current && (interactionMode === 'node' || interactionMode === 'wire')) {
+        if (
+            shouldStartSelectionBox(target, e) &&
+            canvasRef.current &&
+            (interactionMode === 'node' || interactionMode === 'wire')
+        ) {
             clearSelection();
             const rect = canvasRef.current.getBoundingClientRect();
             startSelectionBox(e.clientX - rect.left, e.clientY - rect.top);
@@ -101,16 +106,9 @@ export function useCanvasInteraction({
         handlePanEnd();
         endSelectionBox();
         if (draggingConnection && canvasRef.current) {
-            const rect = canvasRef.current.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            showSearchBox(x, y, {
-                sourceNodeId: draggingConnection.sourceNodeId,
-                sourcePortId: draggingConnection.sourcePort
-            });
             cancelConnection();
         }
-    }, [handlePanEnd, endSelectionBox, draggingConnection, cancelConnection, showSearchBox, canvasRef]);
+    }, [handlePanEnd, endSelectionBox, draggingConnection, cancelConnection, canvasRef]);
 
     const onDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();

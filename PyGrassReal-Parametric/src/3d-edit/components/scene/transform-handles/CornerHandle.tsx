@@ -114,7 +114,12 @@ export function CornerHandle({
   };
 
   return (
-    <group position={position} onPointerUp={handlePointerUp} visible={visible}>
+    <group
+      position={position}
+      onPointerUp={handlePointerUp}
+      visible={visible}
+      userData={{ isSelectionHelper: true, helperType: 'selection-box-rotate-handle' }}
+    >
       {/* Red Plane (YZ) - Rotates around X */}
       <mesh
         ref={xPlaneRef}

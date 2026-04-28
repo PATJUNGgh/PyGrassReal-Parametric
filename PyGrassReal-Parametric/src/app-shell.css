@@ -10,6 +10,51 @@
   pointer-events: none;
 }
 
+.app-route-content {
+  view-transition-name: app-route-content;
+  animation: appRouteFadeIn 0.24s ease both;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes appRouteFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::view-transition-old(app-route-content),
+::view-transition-new(app-route-content) {
+  animation-duration: 240ms;
+  animation-timing-function: ease;
+}
+
+::view-transition-old(app-route-content) {
+  animation-name: appRouteFadeOut;
+}
+
+::view-transition-new(app-route-content) {
+  animation-name: appRouteFadeIn;
+}
+
+@keyframes appRouteFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 .app-route-switcher {
   position: relative;
   display: inline-flex;
@@ -108,6 +153,61 @@
   font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
 }
 
+.app-page-loading {
+  max-width: 960px;
+  margin: 100px auto 0;
+  padding: 0 24px;
+  color: #cbd5e1;
+  font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  font-size: 0.92rem;
+}
+
+.app-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  border-top-color: rgba(226, 232, 240, 0.96);
+  animation: appSpinner 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+.app-global-toast-stack {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 210000;
+  width: min(92vw, 540px);
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.app-global-toast {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.36);
+  backdrop-filter: blur(8px);
+  color: #e2e8f0;
+  padding: 10px 14px;
+  font-family: "Space Grotesk", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  font-size: 0.84rem;
+}
+
+.app-global-toast.is-error {
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(69, 10, 10, 0.92);
+  color: #fecaca;
+}
+
+.app-global-toast.is-success {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(20, 83, 45, 0.9);
+  color: #bbf7d0;
+}
+
 @media (max-width: 980px) {
   .app-route-layer {
     left: 12px;
@@ -132,5 +232,26 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .app-global-toast-stack {
+    top: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-route-content {
+    animation: none;
+  }
+
+  ::view-transition-old(app-route-content),
+  ::view-transition-new(app-route-content) {
+    animation: none;
+  }
+}
+
+@keyframes appSpinner {
+  to {
+    transform: rotate(360deg);
   }
 }

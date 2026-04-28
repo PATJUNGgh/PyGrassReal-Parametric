@@ -8,7 +8,7 @@ import { UIToolbar } from './components/ui/UIToolbar';
 import { DragOverlay } from './components/ui/DragOverlay';
 import LayersSidebar from './components/ui/LayersSidebar';
 import type { SceneObject } from './types/scene';
-import type { NodeData, NodeCanvasHandle, PicturePlacement } from './types/NodeTypes';
+import type { Connection, NodeData, NodeCanvasHandle, PicturePlacement } from './types/NodeTypes';
 import type { LayerInputData } from './utils/computeLayerData';
 import { useTextureUploader } from './hooks/useTextureUploader';
 import { SceneSelectionOverlay } from './components/scene/SceneSelectionOverlay';
@@ -16,6 +16,19 @@ import { useGraphEvaluator } from './hooks/useGraphEvaluator';
 import { SceneInner } from './components/scene/SceneInner';
 import { SceneInteractionContext, SceneInteractionProvider } from './context/SceneInteractionContext';
 import { NodeGraphProvider } from './context/NodeGraphContext';
+
+interface EditorProps {
+  onNavigate?: (nextPath: string) => void;
+}
+
+const createGraphSignature = (nodes: NodeData[], connections: Connection[]) => {
+  const sortedNodes = [...nodes].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedConnections = [...connections].sort((a, b) => a.id.localeCompare(b.id));
+  return JSON.stringify({
+    nodes: sortedNodes,
+    connections: sortedConnections,
+  });
+};
 
 // This component acts as a bridge to synchronize specific context states
 // into refs held by a parent component that shouldn't re-render frequently.
@@ -54,12 +67,12 @@ const InteractionRefBridge = ({
   return null;
 };
 
-const AppContent = () => {
+const AppContent = ({ onNavigate }: EditorProps) => {
   const controlsContainerRef = useRef<HTMLDivElement>(null);
   const nodeCanvasRef = useRef<NodeCanvasHandle>(null);
   const snapUiEnabled = false;
   const NODE_EDITOR_TYPES: NodeData['type'][] = [
-    'box', 'sphere', 'cone', 'cylinder', 'vector-xyz', 'transform', 'build-3d-ai', 'vertex-mask', 'ai-sculpt', 'ai-paint', 'picture-on-mesh', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material',
+    'box', 'sphere', 'cone', 'cylinder', 'vector-xyz', 'transform', 'build-3d-ai', 'ai-agent', 'vertex-mask', 'ai-sculpt', 'ai-paint', 'picture-on-mesh', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material',
     'text-on-mesh', 'mesh-array', 'mesh-eval', 'face-normals', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider',
     'series', 'panel', 'group'
   ];
@@ -102,7 +115,19 @@ const AppContent = () => {
     }
   ]);
 
-  const { evaluateGraph } = useGraphEvaluator({ sceneObjects, setSceneObjects });
+  const {
+    nodesRef: evaluatorNodesRef,
+    connectionsRef: evaluatorConnectionsRef,
+    sceneObjectsRef: evaluatorSceneObjectsRef,
+    runEvaluation,
+  } = useGraphEvaluator({ sceneObjects, setSceneObjects });
+
+  const evaluateGraph = useCallback((nodes: NodeData[], connections: Connection[]) => {
+    evaluatorNodesRef.current = nodes;
+    evaluatorConnectionsRef.current = connections;
+    evaluatorSceneObjectsRef.current = sceneObjects;
+    runEvaluation();
+  }, [evaluatorConnectionsRef, evaluatorNodesRef, evaluatorSceneObjectsRef, runEvaluation, sceneObjects]);
 
   const [backgroundStyle, setBackgroundStyle] = useState({
     cssBackground: '#1e1e1e',
@@ -119,8 +144,11 @@ const AppContent = () => {
   const [showNodeEditor, setShowNodeEditor] = useState(false);
   const [showWidgetEditor, setShowWidgetEditor] = useState(false);
   const [interactionMode, setInteractionMode] = useState<'3d' | 'node' | 'wire'>('3d');
+  const [hasUnsavedGraphChanges, setHasUnsavedGraphChanges] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const nodeOverlayRef = useRef<HTMLDivElement | null>(null);
   const nodeOverlayHoverRef = useRef(false);
+  const initialGraphSignatureRef = useRef<string | null>(null);
 
   // NOTE: A few refs for the 2D selection logic remain here as they are specific to App's 2D canvas logic
   const gumballHoveredFor2D = useRef<boolean>(false);
@@ -196,6 +224,49 @@ const AppContent = () => {
     console.log('handleRedo in App.tsx called');
     nodeCanvasRef.current?.redo();
   }, []);
+
+  const handleGraphChange = useCallback((nodes: NodeData[], connections: Connection[]) => {
+    evaluateGraph(nodes, connections);
+
+    const signature = createGraphSignature(nodes, connections);
+    if (initialGraphSignatureRef.current === null) {
+      initialGraphSignatureRef.current = signature;
+      setHasUnsavedGraphChanges(false);
+      return;
+    }
+
+    const nextDirty = signature !== initialGraphSignatureRef.current;
+    setHasUnsavedGraphChanges((prev) => (prev === nextDirty ? prev : nextDirty));
+  }, [evaluateGraph]);
+
+  const handleBackToDashboard = useCallback(() => {
+    if (!onNavigate) {
+      return;
+    }
+
+    if (hasUnsavedGraphChanges) {
+      setIsLeaveConfirmOpen(true);
+      return;
+    }
+
+    onNavigate('/dashboard');
+  }, [hasUnsavedGraphChanges, onNavigate]);
+
+  const stopDialogEvent = useCallback((event: React.SyntheticEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleLeaveCancel = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    stopDialogEvent(event);
+    setIsLeaveConfirmOpen(false);
+  }, [stopDialogEvent]);
+
+  const handleLeaveConfirm = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    stopDialogEvent(event);
+    setIsLeaveConfirmOpen(false);
+    onNavigate?.('/dashboard');
+  }, [onNavigate, stopDialogEvent]);
 
   const handleInteractionStart = useCallback(() => {
     nodeCanvasRef.current?.startAction();
@@ -395,6 +466,7 @@ const AppContent = () => {
             onZoomToFit={handleZoomToFit}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            onBackToDashboard={handleBackToDashboard}
           />
         </div>
         {/* 3D Canvas */}
@@ -610,12 +682,90 @@ const AppContent = () => {
             }}
             onViewportModeChange={setViewportMode}
             onLayerDataChange={setActiveLayerData}
-            onGraphChange={evaluateGraph}
+            onGraphChange={handleGraphChange}
             uiEnabled={(showNodeEditor || showWidgetEditor)}
           />
         </div>
         {interactionMode === '3d' && activeLayerData.length > 0 && (
           <LayersSidebar layers={activeLayerData} />
+        )}
+        {isLeaveConfirmOpen && (
+          <div
+            role="presentation"
+            onPointerDown={stopDialogEvent}
+            onClick={stopDialogEvent}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 500,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(6, 10, 18, 0.7)',
+              backdropFilter: 'blur(3px)',
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leave-editor-title"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                width: 'min(92vw, 360px)',
+                borderRadius: 14,
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                background: 'rgba(14, 18, 28, 0.96)',
+                boxShadow: '0 16px 42px rgba(0, 0, 0, 0.45)',
+                padding: '18px 18px 14px',
+                color: '#eaf0ff',
+                fontFamily: '"Space Grotesk", sans-serif',
+              }}
+            >
+              <h2 id="leave-editor-title" style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                Leave 3D-Edit?
+              </h2>
+              <p style={{ margin: '10px 0 16px', fontSize: 13, color: 'rgba(234, 240, 255, 0.76)' }}>
+                Unsaved changes may be lost.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                  type="button"
+                  onPointerDown={stopDialogEvent}
+                  onClick={handleLeaveCancel}
+                  style={{
+                    borderRadius: 8,
+                    border: '1px solid rgba(255, 255, 255, 0.24)',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: '#eaf0ff',
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={stopDialogEvent}
+                  onClick={handleLeaveConfirm}
+                  style={{
+                    borderRadius: 8,
+                    border: '1px solid rgba(244, 63, 94, 0.72)',
+                    background: 'rgba(244, 63, 94, 0.88)',
+                    color: '#fff',
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Leave
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
       {activeDragNode && <DragOverlay activeDragNode={activeDragNode} />}
@@ -623,7 +773,7 @@ const AppContent = () => {
   );
 }
 
-function Editor() {
+function Editor({ onNavigate }: EditorProps) {
 
   const initialNodes: NodeData[] = [
     {
@@ -656,7 +806,7 @@ function Editor() {
   return (
     <SceneInteractionProvider>
       <NodeGraphProvider initialNodes={initialNodes}>
-        <AppContent />
+        <AppContent onNavigate={onNavigate} />
       </NodeGraphProvider>
     </SceneInteractionProvider>
   );

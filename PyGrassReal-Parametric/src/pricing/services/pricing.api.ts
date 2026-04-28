@@ -1,21 +1,26 @@
 import { PRICING_PLANS } from '../config/plans';
 import type { BillingCycle, PricingPlan } from '../types/pricing.types';
 
-const NETWORK_DELAY_MS = 220;
-
-const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const QUARTERLY_DISCOUNT_RATE = 0.1;
 
 export const getPlanAmount = (plan: PricingPlan, billingCycle: BillingCycle): number => {
-  return billingCycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
+  if (billingCycle === 'yearly') {
+    return plan.yearlyPrice;
+  }
+
+  if (billingCycle === 'quarterly') {
+    if (plan.monthlyPrice <= 0) return 0;
+    return Math.round(plan.monthlyPrice * 3 * (1 - QUARTERLY_DISCOUNT_RATE));
+  }
+
+  return plan.monthlyPrice;
 };
 
 export async function listPricingPlans(): Promise<PricingPlan[]> {
-  await wait(NETWORK_DELAY_MS);
   return PRICING_PLANS;
 }
 
 export async function getPricingPlanById(planId: string): Promise<PricingPlan | null> {
-  await wait(NETWORK_DELAY_MS);
   const plan = PRICING_PLANS.find((item) => item.id === planId);
   return plan ?? null;
 }

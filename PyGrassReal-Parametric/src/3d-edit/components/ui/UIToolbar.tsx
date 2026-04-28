@@ -1,5 +1,5 @@
 import React from 'react';
-import { Undo2, Redo2 } from 'lucide-react';
+import { LayoutDashboard, Undo2, Redo2 } from 'lucide-react';
 import { NODE_DEFINITIONS } from '../../definitions/nodeDefinitions';
 import { HIDDEN_NODES } from '../../definitions/hiddenNodes';
 import { NODE_CATEGORIES, WIDGET_CATEGORIES, type NodeCategory } from '../../definitions/nodeCategories';
@@ -8,7 +8,7 @@ import type { ActiveDragData } from './DragOverlay'; // Import ActiveDragData
 import './UIToolbar.css';
 
 const NODE_EDITOR_NODES: NodeData['type'][] = [
-    'box', 'sphere', 'cone', 'cylinder', 'vector-xyz', 'transform', 'build-3d-ai', 'vertex-mask', 'ai-sculpt', 'ai-paint', 'picture-on-mesh', 'unit-x', 'unit-y', 'unit-z', 'boolean-toggle', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material', 'text-on-mesh', 'mesh-array', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider', 'series', 'panel'
+    'box', 'sphere', 'cone', 'cylinder', 'vector-xyz', 'transform', 'build-3d-ai', 'ai-agent', 'vertex-mask', 'ai-sculpt', 'ai-paint', 'picture-on-mesh', 'unit-x', 'unit-y', 'unit-z', 'boolean-toggle', 'mesh-union', 'mesh-difference', 'mesh-intersection', 'model-material', 'text-on-mesh', 'mesh-array', 'node-prompt', 'layer-source', 'layer-bridge', 'custom', 'antivirus', 'input', 'output', 'number-slider', 'series', 'panel'
 ].filter(type => !HIDDEN_NODES.includes(type));
 
 const WIDGET_EDITOR_NODES: NodeData['type'][] = [
@@ -208,6 +208,7 @@ interface UIToolbarProps {
     onZoomToFit: () => void;
     onUndo?: () => void;
     onRedo?: () => void;
+    onBackToDashboard?: () => void;
 }
 
 export const UIToolbar: React.FC<UIToolbarProps> = ({
@@ -225,8 +226,34 @@ export const UIToolbar: React.FC<UIToolbarProps> = ({
     handleImageChange,
     onZoomToFit,
     onUndo,
-    onRedo
+    onRedo,
+    onBackToDashboard
 }) => {
+    const stopToolbarEvent = (event: React.SyntheticEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    const handleBackToDashboard = (event: React.MouseEvent<HTMLButtonElement>) => {
+        stopToolbarEvent(event);
+        onBackToDashboard?.();
+    };
+
+    const exitButton = (
+        <div className="ui-toolbar__group ui-toolbar__group--exit">
+            <button
+                type="button"
+                onPointerDown={stopToolbarEvent}
+                onClick={handleBackToDashboard}
+                title="Back to Dashboard"
+                aria-label="Back to Dashboard"
+                className="ui-btn ui-icon-btn--compact ui-exit-icon-btn"
+            >
+                <LayoutDashboard size={18} strokeWidth={2.2} />
+            </button>
+        </div>
+    );
+
     return (
         <div
             className="ui-toolbar"
@@ -294,6 +321,7 @@ export const UIToolbar: React.FC<UIToolbarProps> = ({
                             Image Z
                         </button>
                     </div>
+                    {exitButton}
                 </>
             )}
 
@@ -371,6 +399,7 @@ export const UIToolbar: React.FC<UIToolbarProps> = ({
                         </div>
                     )}
 
+                    {exitButton}
                     <div className="ui-divider" />
 
                     {showNodeEditor && (

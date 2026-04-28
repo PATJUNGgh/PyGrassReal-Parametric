@@ -3,6 +3,8 @@ import { ChevronLeft, FilePlus } from 'lucide-react';
 import { HistoryItem } from './HistoryItem';
 import { ProjectFolder } from './ProjectFolder';
 import type { ChatProject, HistoryItemData } from '../../types/chat.types';
+import { localizeText, useLanguage } from '../../../i18n/language';
+import { CHAT_HISTORY_UI } from '../../data/chatData';
 
 interface ChatHistoryProjectViewProps {
   activeProject: ChatProject;
@@ -13,9 +15,10 @@ interface ChatHistoryProjectViewProps {
   handleDrop: (e: React.DragEvent, projectId: string | null) => void;
   handleDelete: (e: React.MouseEvent, id: string) => void;
   handleDragStart: (e: React.DragEvent, id: string) => void;
+  onSelectChat: (id: string) => void;
 }
 
-export const ChatHistoryProjectView: React.FC<ChatHistoryProjectViewProps> = ({
+export const ChatHistoryProjectView = React.memo(({
   activeProject,
   projectItems,
   confirmingDeleteId,
@@ -24,7 +27,10 @@ export const ChatHistoryProjectView: React.FC<ChatHistoryProjectViewProps> = ({
   handleDrop,
   handleDelete,
   handleDragStart,
-}) => {
+  onSelectChat,
+}: ChatHistoryProjectViewProps) => {
+  const { language } = useLanguage();
+
   return (
     <>
       <div className="project-view-header">
@@ -50,21 +56,20 @@ export const ChatHistoryProjectView: React.FC<ChatHistoryProjectViewProps> = ({
           type="button"
         >
           <FilePlus size={12} />
-          <span>New File</span>
+          <span>{localizeText(language, CHAT_HISTORY_UI.newFile)}</span>
         </button>
       </div>
 
       <div className="history-list">
         <div
-          className="recent-conversations-area"
+          className="recent-conversations-area recent-conversations-area-project"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => handleDrop(e, activeProject.id)}
-          style={{ minHeight: '80px' }}
         >
           {projectItems.length === 0 ? (
             <div className="project-empty-state">
-              <p>No files yet.</p>
-              <p className="project-empty-hint">Create a new file or drag conversations here.</p>
+              <p>{localizeText(language, CHAT_HISTORY_UI.noFiles)}</p>
+              <p className="project-empty-hint">{localizeText(language, CHAT_HISTORY_UI.emptyHint)}</p>
             </div>
           ) : (
             projectItems.map(item => (
@@ -74,6 +79,7 @@ export const ChatHistoryProjectView: React.FC<ChatHistoryProjectViewProps> = ({
                 confirmingDeleteId={confirmingDeleteId}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
+                onSelectChat={onSelectChat}
               />
             ))
           )}
@@ -81,4 +87,6 @@ export const ChatHistoryProjectView: React.FC<ChatHistoryProjectViewProps> = ({
       </div>
     </>
   );
-};
+});
+
+ChatHistoryProjectView.displayName = 'ChatHistoryProjectView';

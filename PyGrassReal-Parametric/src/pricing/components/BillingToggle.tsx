@@ -18,12 +18,21 @@ export function BillingToggle({ value, onChange }: BillingToggleProps) {
       </button>
       <button
         type="button"
+        className={`pricing-billing-option ${value === 'quarterly' ? 'is-active' : ''}`}
+        onClick={() => onChange('quarterly')}
+        aria-pressed={value === 'quarterly'}
+      >
+        Quarterly
+        <span className="pricing-billing-save">-10%</span>
+      </button>
+      <button
+        type="button"
         className={`pricing-billing-option ${value === 'yearly' ? 'is-active' : ''}`}
         onClick={() => onChange('yearly')}
         aria-pressed={value === 'yearly'}
       >
         Yearly
-        <span className="pricing-billing-save">Save 17%</span>
+        <span className="pricing-billing-save">-20%</span>
       </button>
     </div>
   );

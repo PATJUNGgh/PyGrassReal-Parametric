@@ -45,6 +45,7 @@ export function useSceneTransformLogic({
     const hadGumballDragRef = useRef(false);
     const draggingNodeIdRef = useRef<string | null>(null);
     const dragJustFinishedRef = useRef(false);
+    const lockedSelectionIdsRef = useRef<Set<string> | null>(null);
 
     // Cleanup stale IDs
     useEffect(() => {
@@ -74,6 +75,26 @@ export function useSceneTransformLogic({
         }
     }, [isGumballDragging, selectedIds, firstSelectedAppId]);
 
+    useEffect(() => {
+        const shouldLockSelection = isGumballDragging || isHandleDragging || isScalingHandle;
+        if (shouldLockSelection) {
+            if (!lockedSelectionIdsRef.current) {
+                lockedSelectionIdsRef.current = new Set(selectedIds);
+            }
+            return;
+        }
+
+        lockedSelectionIdsRef.current = null;
+    }, [selectedIds, isGumballDragging, isHandleDragging, isScalingHandle]);
+
+    const getActiveSelectionIds = useCallback(() => {
+        const lockedSelection = lockedSelectionIdsRef.current;
+        if (lockedSelection && lockedSelection.size > 0) {
+            return Array.from(lockedSelection);
+        }
+        return selectedIds.size > 0 ? Array.from(selectedIds) : [];
+    }, [selectedIds]);
+
     const getObjectWorldTransform = useCallback((obj: THREE.Object3D) => {
         const selectionGroup = selectionGroupRef.current;
         const isInsideGroup = !!(obj.parent && (obj.parent === selectionGroup || obj.parent.userData?.isSelectionGroup));
@@ -100,7 +121,7 @@ export function useSceneTransformLogic({
 
     const emitSceneTransformChange = useCallback((forcedIds?: string[], bypassThrottle = false) => {
         if (!onTransformChange || !selectedIds) return;
-        const ids = forcedIds ?? (selectedIds.size > 0 ? Array.from(selectedIds) : []);
+        const ids = forcedIds ?? getActiveSelectionIds();
         if (ids.length === 0) return;
 
         const now = performance.now();
@@ -116,7 +137,7 @@ export function useSceneTransformLogic({
             }
         });
         lastSceneTransformSyncTimeRef.current = now;
-    }, [onTransformChange, selectedIds, sceneObjectMap, getObjectWorldTransform]);
+    }, [onTransformChange, selectedIds, getActiveSelectionIds, sceneObjectMap, getObjectWorldTransform]);
 
     const commitFinalTransform = useCallback(() => {
         if (!hadGumballDragRef.current) return;
@@ -134,7 +155,8 @@ export function useSceneTransformLogic({
     useFrame(() => {
         const target = targetRef.current;
         const ghost = ghostRef.current;
-        if (!target || !ghost || !selectedIds || selectedIds.size === 0) return;
+        const activeSelection = lockedSelectionIdsRef.current ?? selectedIds;
+        if (!target || !ghost || !activeSelection || activeSelection.size === 0) return;
 
         const isTransformDragging = !!transformControlsRef.current?.dragging;
 

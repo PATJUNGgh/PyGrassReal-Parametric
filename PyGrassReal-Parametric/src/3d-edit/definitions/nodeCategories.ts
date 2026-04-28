@@ -37,7 +37,7 @@ export const NODE_CATEGORIES: NodeCategory[] = [
     {
         id: 'ai',
         label: 'AI',
-        nodeTypes: ['build-3d-ai', 'ai-sculpt', 'ai-paint', 'node-prompt'],
+        nodeTypes: ['build-3d-ai', 'ai-agent', 'ai-sculpt', 'ai-paint', 'node-prompt'],
     },
     {
         id: 'data-input',

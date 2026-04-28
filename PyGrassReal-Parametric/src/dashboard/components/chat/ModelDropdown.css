@@ -2,7 +2,8 @@
   position: relative;
   display: inline-block;
   flex-shrink: 0;
-  pointer-events: auto; /* Ensure it's interactive */
+  pointer-events: auto;
+  /* Ensure it's interactive */
 }
 
 .model-dropdown-trigger {
@@ -19,6 +20,12 @@
   font-weight: 500;
   transition: all 0.2s ease;
   user-select: none;
+  outline: none;
+}
+
+.model-dropdown-trigger:focus,
+.model-dropdown-trigger:focus-visible {
+  outline: none;
 }
 
 .model-dropdown-trigger:hover {
@@ -49,8 +56,8 @@
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  z-index: 1000; /* Increased from 100 */
-  pointer-events: auto; /* Explicitly allow interactions */
+  z-index: 1000;
+  pointer-events: auto;
 }
 
 .model-dropdown-wrapper.is-up .model-dropdown-menu {
@@ -92,7 +99,8 @@
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
-  pointer-events: auto; /* Ensure individual options are clickable */
+  pointer-events: auto;
+  /* Ensure individual options are clickable */
 }
 
 .model-option:hover {
@@ -103,6 +111,48 @@
 .model-option.active {
   background: rgba(125, 211, 252, 0.1);
   color: var(--dash-accent-blue);
+}
+
+.ai-bot-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dash-accent-blue);
+  margin-right: 2px;
+}
+
+.model-dropdown-trigger .ai-bot-icon {
+  animation: aiPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes aiPulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(125, 211, 252, 0.4));
+  }
+
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 6px rgba(125, 211, 252, 0.8));
+    color: #fff;
+  }
+
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(125, 211, 252, 0.4));
+  }
+}
+
+.model-option:hover .ai-bot-icon {
+  color: #fff;
+  filter: drop-shadow(0 0 4px rgba(125, 211, 252, 0.6));
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+.model-option.active .ai-bot-icon {
+  color: var(--dash-accent-blue);
+  filter: drop-shadow(0 0 4px rgba(125, 211, 252, 0.4));
 }
 
 @keyframes slideUp {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { MobileMenu } from './components/layout/MobileMenu';
 import { useClickOutside } from './hooks/useClickOutside';
@@ -20,14 +20,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
+  const toggleMobileMenu = useCallback(() => setIsMobileMenuOpen(prev => !prev), []);
+  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
+
   // Clean click outside for mobile menu
-  const mobileMenuRef = useClickOutside<HTMLDivElement>(() => setIsMobileMenuOpen(false));
+  const mobileMenuRef = useClickOutside<HTMLDivElement>(closeMobileMenu);
 
   return (
     <div className={`dashboard-root ${!isSidebarOpen ? 'is-sidebar-closed' : ''}`}>
       <MobileMenu
         isOpen={isMobileMenuOpen}
-        onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        onToggle={toggleMobileMenu}
         activeRoute={activeRoute}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
@@ -36,7 +40,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       <Sidebar
         isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggle={toggleSidebar}
         activeRoute={activeRoute}
         onNavigate={onNavigate}
         onSignOut={onSignOut}

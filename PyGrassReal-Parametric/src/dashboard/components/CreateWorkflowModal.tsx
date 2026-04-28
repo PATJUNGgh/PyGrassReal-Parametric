@@ -1,5 +1,7 @@
-import { useState, type FormEvent } from 'react';
-import { Modal } from './Modal';
+import React, { useState, useEffect, type FormEvent } from 'react';
+import Modal from './Modal';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { MODAL_UI } from '../data/dashboardData';
 
 interface CreateWorkflowModalProps {
   open: boolean;
@@ -8,13 +10,19 @@ interface CreateWorkflowModalProps {
   onCreate: (name: string) => Promise<void>;
 }
 
-export function CreateWorkflowModal({
+export const CreateWorkflowModal = React.memo(({
   open,
   isSubmitting,
   onClose,
   onCreate,
-}: CreateWorkflowModalProps) {
+}: CreateWorkflowModalProps) => {
+  const { language } = useLanguage();
   const [name, setName] = useState('');
+
+  // Reset name when modal opens
+  useEffect(() => {
+    if (open) setName('');
+  }, [open]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +34,7 @@ export function CreateWorkflowModal({
   const footer = (
     <>
       <button type="button" className="is-secondary" onClick={onClose} disabled={isSubmitting}>
-        Cancel
+        {localizeText(language, MODAL_UI.cancel)}
       </button>
       <button 
         type="submit" 
@@ -34,7 +42,7 @@ export function CreateWorkflowModal({
         className="is-primary" 
         disabled={isSubmitting || !name.trim()}
       >
-        {isSubmitting ? 'Creating...' : 'Create workflow'}
+        {isSubmitting ? localizeText(language, MODAL_UI.creating) : localizeText(language, MODAL_UI.create)}
       </button>
     </>
   );
@@ -43,21 +51,24 @@ export function CreateWorkflowModal({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title="Create workflow"
+      title={localizeText(language, MODAL_UI.createTitle)}
       footer={footer}
     >
-      <p>Set a clear name, then open it in the editor.</p>
+      <p>{localizeText(language, MODAL_UI.createSubtitle)}</p>
       <form id="create-workflow-form" onSubmit={handleSubmit}>
-        <label htmlFor="workflow-name">Workflow name</label>
+        <label htmlFor="workflow-name">{localizeText(language, MODAL_UI.workflowNameLabel)}</label>
         <input
           id="workflow-name"
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Summer campaign automation"
+          placeholder={localizeText(language, MODAL_UI.placeholder)}
           autoFocus
+          maxLength={100}
         />
       </form>
     </Modal>
   );
-}
+});
+
+CreateWorkflowModal.displayName = 'CreateWorkflowModal';

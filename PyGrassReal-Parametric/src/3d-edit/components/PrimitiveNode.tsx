@@ -8,6 +8,21 @@ const calculateFallbackHeight = (maxPorts: number): number => {
     return Math.max(100, 110 + (maxPorts > 0 ? maxPorts * 28 : 0));
 }
 
+const arePortsEqual = (currentPorts: Port[] | undefined, expectedPorts: Port[]): boolean => {
+    if ((currentPorts?.length ?? 0) !== expectedPorts.length) {
+        return false;
+    }
+
+    return expectedPorts.every((expectedPort, index) => {
+        const currentPort = currentPorts?.[index];
+        return (
+            currentPort?.id === expectedPort.id
+            && currentPort?.label === expectedPort.label
+            && currentPort?.type === expectedPort.type
+        );
+    });
+};
+
 interface PrimitiveNodeProps {
     node: NodeData;
     onPositionChange: (id: string, position: { x: number; y: number }) => void;
@@ -67,15 +82,17 @@ export const PrimitiveNode: React.FC<PrimitiveNodeProps> = ({
 
         const { initialData, name: defName, icon: defIcon } = nodeDefinition;
         const dataUpdate: Partial<NodeData['data']> = {};
+        const expectedInputs = (initialData?.inputs || []) as Port[];
+        const expectedOutputs = (initialData?.outputs || []) as Port[];
 
         const shouldInitInputs = !node.data.inputs || node.data.inputs.length === 0;
-        if (shouldInitInputs) {
-            dataUpdate.inputs = initialData?.inputs || [];
+        if (shouldInitInputs || !arePortsEqual(node.data.inputs as Port[] | undefined, expectedInputs)) {
+            dataUpdate.inputs = expectedInputs;
         }
 
         const shouldInitOutputs = !node.data.outputs || node.data.outputs.length === 0;
-        if (shouldInitOutputs) {
-            dataUpdate.outputs = initialData?.outputs || [];
+        if (shouldInitOutputs || !arePortsEqual(node.data.outputs as Port[] | undefined, expectedOutputs)) {
+            dataUpdate.outputs = expectedOutputs;
         }
 
         const defaultName = initialData?.customName || defName;
@@ -96,12 +113,11 @@ export const PrimitiveNode: React.FC<PrimitiveNodeProps> = ({
             dataUpdate.height = calculateFallbackHeight(nextMaxPorts);
         }
 
-        // Move only Box output port; keep output label layout untouched.
-        if (usesBoxPortLayout && node.data.outputPortSide !== 'right') {
-            dataUpdate.outputPortSide = 'right';
-        }
         if (usesBoxPortLayout && node.data.inputPortOffsetLeft !== -30) {
             dataUpdate.inputPortOffsetLeft = -30;
+        }
+        if (usesBoxPortLayout && node.data.outputPortSide !== 'right') {
+            dataUpdate.outputPortSide = 'right';
         }
         if (usesBoxPortLayout && node.data.outputPortAbsoluteCentered !== true) {
             dataUpdate.outputPortAbsoluteCentered = true;

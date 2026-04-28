@@ -15,7 +15,8 @@ const SINGLE_TRANSFORM_INPUT: Port[] = [
     { id: 'input-transform', label: 'Transform', type: 'Matrix' },
 ];
 
-const COMMON_GEOMETRY_OUTPUT: Port[] = [{ id: 'output-geometry', label: 'Geometry', type: 'Mesh' }];
+const createCommonGeometryOutput = (): Port[] => [{ id: 'output-geometry', label: 'Geometry', type: 'Mesh' }];
+const AI_AGENT_INPUT_PORT: Port = { id: 'input-agent', label: 'Input', type: 'Data' };
 
 const BASE_INITIAL_DATA: Partial<NodeData['data']> = {
     scale: { x: 1, y: 1, z: 1 },
@@ -58,7 +59,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
             version: 2,
             width: 230,
             inputs: [...SINGLE_TRANSFORM_INPUT, { id: 'input-corner', label: 'Corner', type: 'Number' }],
-            outputs: COMMON_GEOMETRY_OUTPUT,
+            outputs: createCommonGeometryOutput(),
             ...HIDE_MODIFIER_AND_PORT_CONTROLS_DATA,
             color: '#cccccc',
         },
@@ -77,7 +78,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
             bodyPadding: '36px 20px 10px 20px',
             bodyMinHeight: 60,
             inputs: SINGLE_TRANSFORM_INPUT,
-            outputs: COMMON_GEOMETRY_OUTPUT,
+            outputs: createCommonGeometryOutput(),
             ...HIDE_MODIFIER_AND_PORT_CONTROLS_DATA,
             color: '#cccccc',
         },
@@ -100,7 +101,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
                 { id: 'input-length', label: 'Length', type: 'Number' },
                 { id: 'input-corner', label: 'Corner', type: 'Number' },
             ],
-            outputs: COMMON_GEOMETRY_OUTPUT,
+            outputs: createCommonGeometryOutput(),
             ...HIDE_MODIFIER_AND_PORT_CONTROLS_DATA,
             radius: 1.0,
             length: 2.0,
@@ -126,7 +127,7 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
                 { id: 'input-length', label: 'Length', type: 'Number' },
                 { id: 'input-corner', label: 'Corner', type: 'Number' },
             ],
-            outputs: COMMON_GEOMETRY_OUTPUT,
+            outputs: createCommonGeometryOutput(),
             ...HIDE_MODIFIER_AND_PORT_CONTROLS_DATA,
             radius: 1.0,
             length: 2.0,
@@ -238,6 +239,32 @@ export const NODE_DEFINITIONS: Record<NodeData['type'], NodeDefinition> = {
             bodyMinHeight: 60,
         },
         effectColor: '#10b981',
+    },
+    'ai-agent': {
+        type: 'ai-agent',
+        name: 'AI Agent',
+        label: 'AI Agent',
+        icon: '\u{1F9E0}',
+        color: ['#f97316', '#ea580c'],
+        shadow: '249, 115, 22',
+        initialData: {
+            customName: 'AI Agent',
+            width: 144,
+            height: 144,
+            agentType: 'phraram',
+            portMode: 'input',
+            inputs: [AI_AGENT_INPUT_PORT],
+            outputs: [],
+            hideInputsAdd: true,
+            hideOutputsAdd: true,
+            hidePortControls: true,
+            hideModifierMenu: true,
+            hideInputsHeader: true,
+            hideOutputsHeader: true,
+            hidePortLabels: true,
+            resizable: false,
+        },
+        effectColor: '#f97316',
     },
     'vertex-mask': {
         type: 'vertex-mask',
@@ -1162,8 +1189,13 @@ export const getNodeDefinition = (type: NodeData['type']): NodeDefinition | unde
 
 export const getInitialDataForNode = (type: NodeData['type']): Partial<NodeData['data']> => {
     const definition = getNodeDefinition(type);
-    return {
+    const mergedInitialData = {
         ...BASE_INITIAL_DATA,
         ...(definition ? definition.initialData : {}),
     };
+    try {
+        return structuredClone(mergedInitialData);
+    } catch {
+        return JSON.parse(JSON.stringify(mergedInitialData)) as Partial<NodeData['data']>;
+    }
 };

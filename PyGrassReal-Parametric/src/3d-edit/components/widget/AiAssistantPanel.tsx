@@ -4,6 +4,9 @@ import { CornerDownLeft, History, Plus, X } from 'lucide-react';
 import type { ChatHistoryMessage, ChatSession, PendingImageItem } from '../../types/NodeTypes';
 import styles from './AiAssistantPanel.module.css';
 
+import hanumanIcon from '../../../assets/Profile-Ai/HANUMAN-AI-512.png';
+import phraramIcon from '../../../assets/Profile-Ai/PHRARAM-AI-512.png';
+
 interface AiAssistantPanelProps {
     enabled: boolean;
     visible: boolean;

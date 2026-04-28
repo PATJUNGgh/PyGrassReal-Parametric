@@ -61,6 +61,10 @@
     color: #7dd3fc;
 }
 
+.drawer-title-spacer {
+    margin-bottom: 16px;
+}
+
 .drawer-close {
     background: transparent;
     border: none;
@@ -281,6 +285,10 @@
     margin-bottom: 12px;
 }
 
+.projects-list-spacer {
+    margin-top: 8px;
+}
+
 .project-folder {
     background: rgba(15, 23, 42, 0.4);
     border: 1px dashed rgba(148, 163, 184, 0.2);
@@ -309,6 +317,10 @@
     font-size: 0.7rem;
     color: #cbd5e1;
     font-weight: 500;
+}
+
+.folder-icon-accent {
+    color: #bae6fd;
 }
 
 .project-folder-actions {
@@ -340,6 +352,14 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.recent-conversations-area-main {
+    min-height: 50px;
+}
+
+.recent-conversations-area-project {
+    min-height: 80px;
 }
 
 /* ===== Project Detail View ===== */

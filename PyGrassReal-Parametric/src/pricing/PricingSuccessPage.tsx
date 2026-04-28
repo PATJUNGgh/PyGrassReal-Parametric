@@ -1,20 +1,32 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, LayoutDashboard, WalletCards } from 'lucide-react';
-import { getCheckoutSession } from './services/checkout.api';
-import { activateEntitlementFromSession } from './services/entitlement.api';
+import { useProfile } from '../auth/hooks/useProfile';
 import { getPricingPlanById } from './services/pricing.api';
-import type { CheckoutSession, PricingPlan, SubscriptionEntitlement } from './types/pricing.types';
+import {
+  finalizeSubscriptionCheckoutSession,
+  fetchSubscriptionTransactionBySession,
+  waitForSubscriptionTransaction,
+  type SubscriptionTransaction,
+} from './services/subscriptionBilling.api';
+import { getEntitlementByUserId } from './services/entitlement.api';
+import type { BillingCycle, PricingPlan, SubscriptionEntitlement } from './types/pricing.types';
 import './pricing.css';
 
 interface PricingSuccessPageProps {
   onNavigate: (path: string) => void;
 }
 
+const toCycleLabel = (billingCycle: BillingCycle): string => {
+  if (billingCycle === 'quarterly') return 'Quarterly';
+  if (billingCycle === 'yearly') return 'Yearly';
+  return 'Monthly';
+};
+
 const formatDate = (value: string | null): string => {
   if (!value) return 'N/A';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return 'N/A';
-  return parsed.toLocaleString('th-TH', {
+  return parsed.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -23,12 +35,24 @@ const formatDate = (value: string | null): string => {
   });
 };
 
+const buildFallbackEntitlement = (tx: SubscriptionTransaction): SubscriptionEntitlement => {
+  return {
+    user_id: tx.userId,
+    plan_id: tx.planId,
+    billing_cycle: tx.billingCycle,
+    status: 'active',
+    activated_at: tx.paidAt ?? tx.createdAt,
+    current_period_end: null,
+  };
+};
+
 export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [session, setSession] = useState<CheckoutSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [transaction, setTransaction] = useState<SubscriptionTransaction | null>(null);
   const [plan, setPlan] = useState<PricingPlan | null>(null);
   const [entitlement, setEntitlement] = useState<SubscriptionEntitlement | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const profile = useProfile();
 
   useEffect(() => {
     let cancelled = false;
@@ -36,50 +60,69 @@ export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
     const handleSuccess = async () => {
       setIsLoading(true);
       setErrorMessage(null);
+
+      if (profile.isLoading) {
+        return;
+      }
+
+      if (!profile.id) {
+        onNavigate('/auth/login');
+        return;
+      }
+
       const query = new URLSearchParams(window.location.search);
       const sessionId = query.get('session');
-
       if (!sessionId) {
         setErrorMessage('Missing checkout session ID.');
         setIsLoading(false);
         return;
       }
 
-      const resolvedSession = await getCheckoutSession(sessionId);
-      if (!resolvedSession) {
-        if (!cancelled) {
-          setErrorMessage('Checkout session not found.');
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      if (resolvedSession.status === 'pending') {
-        onNavigate(
-          `/pricing/checkout?plan=${encodeURIComponent(resolvedSession.plan_id)}&cycle=${resolvedSession.billing_cycle}`,
-        );
-        return;
-      }
-
-      if (resolvedSession.status !== 'paid') {
-        onNavigate(`/pricing/cancel?session=${encodeURIComponent(resolvedSession.session_id)}`);
-        return;
-      }
-
       try {
-        const [selectedPlan, activatedEntitlement] = await Promise.all([
-          getPricingPlanById(resolvedSession.plan_id),
-          activateEntitlementFromSession(resolvedSession),
+        const finalized = await finalizeSubscriptionCheckoutSession(sessionId);
+        if (cancelled) {
+          return;
+        }
+
+        if (finalized.status === 'paid') {
+          onNavigate('/dashboard');
+          return;
+        }
+
+        const tx = await waitForSubscriptionTransaction(sessionId);
+        if (!tx) {
+          throw new Error('Checkout session was not found in billing records.');
+        }
+
+        if (tx.status !== 'paid') {
+          onNavigate(`/pricing/cancel?session=${encodeURIComponent(sessionId)}`);
+          return;
+        }
+
+        const [selectedPlan, resolvedEntitlement] = await Promise.all([
+          getPricingPlanById(tx.planId),
+          getEntitlementByUserId(profile.id),
         ]);
 
-        if (!cancelled) {
-          setSession(resolvedSession);
-          setPlan(selectedPlan);
-          setEntitlement(activatedEntitlement);
+        if (cancelled) {
+          return;
         }
+
+        setTransaction(tx);
+        setPlan(selectedPlan);
+        setEntitlement(resolvedEntitlement ?? buildFallbackEntitlement(tx));
+        onNavigate('/dashboard');
       } catch (error) {
-        if (!cancelled) {
-          setErrorMessage(error instanceof Error ? error.message : 'Failed to activate subscription entitlement.');
+        if (cancelled) {
+          return;
+        }
+
+        setErrorMessage(error instanceof Error ? error.message : 'Unable to complete subscription setup.');
+
+        const fallbackTx = await fetchSubscriptionTransactionBySession(sessionId);
+        if (fallbackTx?.status && fallbackTx.status !== 'paid') {
+          onNavigate(`/pricing/cancel?session=${encodeURIComponent(sessionId)}`);
+          return;
         }
       } finally {
         if (!cancelled) {
@@ -92,7 +135,7 @@ export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [onNavigate]);
+  }, [onNavigate, profile.id, profile.isLoading]);
 
   if (isLoading) {
     return (
@@ -101,21 +144,21 @@ export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
           <section className="pricing-result-card">
             <span className="pricing-result-chip is-success">Finalizing</span>
             <h1>Completing subscription activation...</h1>
-            <p>Please wait while we update your entitlement and dashboard access.</p>
+            <p>Please wait while we verify payment and update your access.</p>
           </section>
         </div>
       </div>
     );
   }
 
-  if (!session || !entitlement || errorMessage) {
+  if (!transaction || !entitlement || errorMessage) {
     return (
       <div className="pricing-page">
         <div className="pricing-shell pricing-result-layout">
           <section className="pricing-result-card">
             <span className="pricing-result-chip is-cancel">Activation issue</span>
             <h1>Unable to complete subscription setup</h1>
-            <p>{errorMessage ?? 'Please retry checkout from pricing page.'}</p>
+            <p>{errorMessage ?? 'Please retry checkout from the pricing page.'}</p>
             <div className="pricing-result-actions">
               <button type="button" className="pricing-top-button is-primary" onClick={() => onNavigate('/pricing')}>
                 Back to pricing
@@ -135,16 +178,15 @@ export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
             <CheckCircle2 size={14} />
             Payment successful
           </span>
-          <h1>Your subscription is active and ready on Dashboard.</h1>
+          <h1>Your subscription is active.</h1>
           <p>
-            {plan ? `${plan.name} plan` : 'Selected plan'} has been activated for your account. You can continue in
-            Dashboard immediately.
+            {plan ? `${plan.name} plan` : 'Selected plan'} has been activated for your account.
           </p>
 
           <div className="pricing-result-summary">
             <div>
               <span>Session ID</span>
-              <strong>{session.session_id}</strong>
+              <strong>{transaction.stripeSessionId ?? 'N/A'}</strong>
             </div>
             <div>
               <span>Plan</span>
@@ -152,7 +194,7 @@ export function PricingSuccessPage({ onNavigate }: PricingSuccessPageProps) {
             </div>
             <div>
               <span>Billing cycle</span>
-              <strong>{entitlement.billing_cycle}</strong>
+              <strong>{toCycleLabel(entitlement.billing_cycle)}</strong>
             </div>
             <div>
               <span>Current period end</span>

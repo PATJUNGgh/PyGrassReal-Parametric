@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber/dist/declarations/src/core/events';
+import type { Mesh } from 'three';
 
 export interface UseTransformHandleProps {
   onPointerDown?: (e: ThreeEvent<PointerEvent>) => void;
@@ -17,7 +18,7 @@ export function useTransformHandle({
 }: UseTransformHandleProps) {
   const [hovered, setHovered] = useState(false);
   const [interacting, setInteracting] = useState(false);
-  const meshRef = useRef<THREE.Mesh>(null!);
+  const meshRef = useRef<Mesh>(null!);
   const { gl } = useThree();
   const activePointerIdRef = useRef<number | null>(null);
 
@@ -74,7 +75,7 @@ export function useTransformHandle({
   };
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>) => {
-    if (interacting) return;
+    if (interacting || isGumballDragging) return;
     e.stopPropagation();
     setHovered(true);
     onHover(true);

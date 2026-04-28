@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import { hitTestNode } from '../interaction/hitTestPolicy';
 
 interface UseNodeResizeV2Props {
     id: string;
@@ -33,6 +34,14 @@ export const useNodeResizeV2 = ({
 
     const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button !== 0 || disabled) return;
+        const target = e.target instanceof HTMLElement ? e.target : null;
+        const hitResult = hitTestNode(
+            { x: e.clientX, y: e.clientY },
+            { element: target }
+        );
+        if (hitResult.target !== 'resize-handle') {
+            return;
+        }
         e.stopPropagation();
         const safeScale = Math.max(scale, 0.01);
         const rect = nodeRef.current?.getBoundingClientRect();

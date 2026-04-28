@@ -143,11 +143,11 @@ export function SelectionBox({
 
       <group 
         ref={handlesRef}
+        userData={{ isSelectionHelper: true, helperType: 'selection-box-handles' }}
         onPointerDown={(e) => {
           e.stopPropagation();
-          if (e.nativeEvent) {
-            (e.nativeEvent as any).stopImmediatePropagation?.();
-          }
+          const nativeEvent = e.nativeEvent as PointerEvent | undefined;
+          nativeEvent?.stopImmediatePropagation();
         }}
       >
         {corners.map((pos, i) => (

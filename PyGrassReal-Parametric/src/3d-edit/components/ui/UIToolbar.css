@@ -37,6 +37,27 @@
   gap: 6px;
 }
 
+.ui-toolbar__group--exit {
+  flex-shrink: 0;
+}
+
+.ui-exit-icon-btn {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #dff6ff;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2), 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.ui-exit-icon-btn:hover {
+  background: rgba(56, 189, 248, 0.24);
+  border-color: rgba(56, 189, 248, 0.82);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.28), 0 10px 20px rgba(0, 0, 0, 0.34);
+}
+
+.ui-exit-icon-btn:active {
+  background: rgba(56, 189, 248, 0.3);
+}
+
 .ui-toolbar__group--undo {
   gap: 4px;
   padding: 4px 8px;

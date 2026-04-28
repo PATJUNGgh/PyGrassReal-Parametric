@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { InputHTMLAttributes, ReactNode } from 'react';
+import type { InputHTMLAttributes, ReactNode, Ref } from 'react';
 
 interface AuthTextFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
@@ -8,6 +8,7 @@ interface AuthTextFieldProps
   onValueChange: (value: string) => void;
   error?: string;
   rightSlot?: ReactNode;
+  inputRef?: Ref<HTMLInputElement>;
 }
 
 export function AuthTextField({
@@ -16,9 +17,16 @@ export function AuthTextField({
   onValueChange,
   error,
   rightSlot,
+  inputRef,
   ...inputProps
 }: AuthTextFieldProps) {
-  const fieldId = useId();
+  const generatedFieldId = useId();
+  const fieldId = inputProps.id ?? generatedFieldId;
+  const errorId = `${fieldId}-error`;
+  const ariaDescribedBy = [inputProps['aria-describedby'], error ? errorId : undefined]
+    .filter(Boolean)
+    .join(' ') || undefined;
+  const ariaInvalid = error ? true : inputProps['aria-invalid'];
 
   return (
     <div className="auth-field">
@@ -35,16 +43,19 @@ export function AuthTextField({
           .join(' ')}
       >
         <input
-          id={fieldId}
           className="auth-field-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
+          ref={inputRef}
           {...inputProps}
+          id={fieldId}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
         />
         {rightSlot ? <span className="auth-field-right">{rightSlot}</span> : null}
       </div>
       {error ? (
-        <p className="auth-field-error" role="alert">
+        <p id={errorId} className="auth-field-error" role="alert">
           {error}
         </p>
       ) : null}

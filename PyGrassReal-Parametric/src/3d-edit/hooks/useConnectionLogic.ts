@@ -1,145 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Connection, NodeData } from '../types/NodeTypes';
 import { isInputPort } from '../utils/nodeUtils';
+import { getInitialDataForNode } from '../definitions/nodeDefinitions';
 import { useNodeGraph } from '../context/NodeGraphContext';
-import {
-    INSPECTOR_OUTPUT_SOURCE_NODE_TYPE,
-    INSPECTOR_OUTPUT_SOURCE_PORT,
-    INSPECTOR_OUTPUT_WHITELIST_SET,
-    NUMBER_SLIDER_OUTPUT_SOURCE_NODE_TYPE,
-    NUMBER_SLIDER_OUTPUT_SOURCE_PORT,
-    NUMBER_SLIDER_OUTPUT_WHITELIST_SET,
-    TEXT_ON_MESH_OUTPUT_SOURCE_NODE_TYPE,
-    TEXT_ON_MESH_OUTPUT_SOURCE_PORT,
-    TEXT_ON_MESH_OUTPUT_WHITELIST_SET,
-    AI_ASSISTANT_OUTPUT_SOURCE_NODE_TYPE,
-    AI_ASSISTANT_OUTPUT_SOURCE_PORT,
-    AI_ASSISTANT_OUTPUT_WHITELIST_SET,
-    PROMPT_NODE_OUTPUT_SOURCE_NODE_TYPE,
-    PROMPT_NODE_OUTPUT_SOURCE_PORT,
-    PROMPT_NODE_OUTPUT_TARGET_WHITELIST_SET,
-    BACKGROUND_NODE_OUTPUT_SOURCE_NODE_TYPE,
-    BACKGROUND_NODE_OUTPUT_SOURCE_PORT,
-    BACKGROUND_NODE_OUTPUT_TARGET_WHITELIST_SET,
-    LAYER_BRIDGE_INPUT_WHITELIST_SET,
-    isLayerBridgeInputPort,
-    VIEWPORT_NODE_OUTPUT_SOURCE_NODE_TYPE,
-    VIEWPORT_NODE_OUTPUT_SOURCE_PORT,
-    VIEWPORT_NODE_OUTPUT_TARGET_WHITELIST_SET
-} from '../utils/canvasUtils';
-
-const MESH_BOOLEAN_INPUT_WHITELIST = new Set<NodeData['type']>([
-    'box',
-    'sphere',
-    'cone',
-    'cylinder',
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-]);
-const AI_MESH_INPUT_WHITELIST = new Set<NodeData['type']>([
-    'box',
-    'sphere',
-    'cone',
-    'cylinder',
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-]);
-const MODEL_MATERIAL_INPUT_WHITELIST = new Set<NodeData['type']>([
-    'box',
-    'sphere',
-    'cone',
-    'cylinder',
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-]);
-const MESH_BOOLEAN_SMOOTHNESS_NODE_TYPES = new Set<NodeData['type']>([
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-]);
-const TRANSFORM_MATRIX_OUTPUT_WHITELIST = new Set<NodeData['type']>([
-    'box',
-    'sphere',
-    'cone',
-    'cylinder',
-    'build-3d-ai',
-]);
-const AI_MESH_OUTPUT_SOURCE_NODE_TYPES = new Set<NodeData['type']>(['ai-paint', 'ai-sculpt']);
-const AI_MESH_OUTPUT_SOURCE_PORT = 'output-mesh';
-const AI_MESH_OUTPUT_BASE_TARGET_WHITELIST = new Set<NodeData['type']>([
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-    'layer-source',
-    'panel',
-]);
-const AI_MESH_OUTPUT_AI_TARGET_WHITELIST = new Set<NodeData['type']>(['ai-sculpt', 'ai-paint']);
-const LAYER_SOURCE_OUTPUT_TARGET_WHITELIST = new Set<NodeData['type']>(['layer-bridge', 'panel']);
-const MESH_BOOLEAN_OUTPUT_SOURCE_NODE_TYPES = new Set<NodeData['type']>([
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-]);
-const MESH_BOOLEAN_OUTPUT_SOURCE_PORT = 'R';
-const MESH_BOOLEAN_OUTPUT_TARGET_WHITELIST = new Set<NodeData['type']>([
-    'ai-sculpt',
-    'ai-paint',
-    'model-material',
-    'mesh-union',
-    'mesh-difference',
-    'mesh-intersection',
-    'panel',
-    'layer-source',
-]);
-const TEXT_DATA_OUTPUT_SOURCE_NODE_TYPE: NodeData['type'] = 'node-prompt';
-const TEXT_DATA_OUTPUT_SOURCE_PORT = 'output-prompt';
-const TEXT_DATA_OUTPUT_TARGET_WHITELIST = new Set<NodeData['type']>(['panel', 'layer-source']);
-
-const isAllowedAiMeshOutputTargetType = (
-    sourceNodeType: NodeData['type'] | undefined,
-    targetNodeType: NodeData['type'] | undefined
-): boolean => {
-    if (!targetNodeType) {
-        return false;
-    }
-    if (AI_MESH_OUTPUT_BASE_TARGET_WHITELIST.has(targetNodeType)) {
-        return true;
-    }
-    const isAiMeshOutputSourceType = sourceNodeType === 'ai-sculpt' || sourceNodeType === 'ai-paint';
-    return isAiMeshOutputSourceType && AI_MESH_OUTPUT_AI_TARGET_WHITELIST.has(targetNodeType);
-};
-const AI_MASK_TARGET_NODE_TYPES = new Set<NodeData['type']>(['ai-paint', 'ai-sculpt']);
-const AI_MASK_TARGET_INPUT_PORT = 'input-mask';
-const AI_MASK_ALLOWED_SOURCE_NODE_TYPE: NodeData['type'] = 'vertex-mask';
-
-const isMeshBooleanInputPort = (nodeType: NodeData['type'] | undefined, portId: string) => {
-    if (nodeType === 'mesh-union') {
-        return portId === 'M';
-    }
-    if (nodeType === 'mesh-difference' || nodeType === 'mesh-intersection') {
-        return portId === 'A' || portId === 'B';
-    }
-    return false;
-};
-
-const getMeshBooleanInputAllowedSourceNodeType = (
-    nodeType: NodeData['type'] | undefined,
-    portId: string
-): NodeData['type'] | null => {
-    if (nodeType && portId === 'S' && MESH_BOOLEAN_SMOOTHNESS_NODE_TYPES.has(nodeType)) {
-        return 'number-slider';
-    }
-    if (nodeType === 'mesh-difference' && portId === 'showMeshesB') {
-        return 'boolean-toggle';
-    }
-    if (nodeType === 'mesh-intersection' && portId === 'showMeshesAB') {
-        return 'boolean-toggle';
-    }
-    return null;
-};
+import { getAutoCreateAction, hasExistingConnectionForAutoCreate, type AutoCreateRule } from '../graph/autoCreatePolicy';
+import { canConnect } from '../graph/connectionPolicy';
+import { computeNodePosition } from '../graph/autoLayoutPolicy';
 
 interface UseConnectionLogicProps {
     canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -154,14 +20,27 @@ interface UseConnectionLogicProps {
         sourceNodeId: string;
         sourcePortId: string;
     }) => void;
+    addNode: (type: NodeData['type'], position: { x: number; y: number; }, options?: {
+        editorOrigin?: 'nodes' | 'widget';
+        initialData?: Partial<NodeData['data']>;
+        initialConnections?: Array<{
+            sourceNodeId?: string;
+            sourcePort: string;
+            targetNodeId?: string;
+            targetPort: string;
+        }>;
+    }) => string | undefined;
 }
 
 export const useConnectionLogic = ({
     canvasRef,
+    offset,
+    scale,
     getPortPosition,
     setLightningEffects,
     setShakingNodes,
     onConnectionDropOnEmpty,
+    addNode,
 }: UseConnectionLogicProps) => {
     const {
         nodes,
@@ -185,6 +64,111 @@ export const useConnectionLogic = ({
     useEffect(() => {
         draggingConnectionRef.current = draggingConnection;
     }, [draggingConnection]);
+
+    const maybeGetAutoCreateAction = useCallback((sourceNodeId: string, sourcePortId: string) => {
+        const hasAnyConnectionOnSourcePort = connections.some((connection) => (
+            (connection.sourceNodeId === sourceNodeId && connection.sourcePort === sourcePortId) ||
+            (connection.targetNodeId === sourceNodeId && connection.targetPort === sourcePortId)
+        ));
+        if (hasAnyConnectionOnSourcePort) {
+            return null;
+        }
+
+        const sourceNode = nodes.find((node) => node.id === sourceNodeId);
+        const action = getAutoCreateAction(sourceNode, sourcePortId);
+        const hasDuplicateAutoCreate = hasExistingConnectionForAutoCreate(
+            connections,
+            nodes,
+            sourceNodeId,
+            sourcePortId,
+            action
+        );
+        if (hasDuplicateAutoCreate) {
+            return null;
+        }
+        return action;
+    }, [connections, nodes]);
+
+    const executeAutoCreateAction = useCallback((
+        action: AutoCreateRule,
+        sourceNodeId: string,
+        sourcePortId: string,
+        clientX: number,
+        clientY: number
+    ): boolean => {
+        if (!canvasRef.current) {
+            return false;
+        }
+
+        const sourceNode = nodes.find((node) => node.id === sourceNodeId);
+        if (!sourceNode) {
+            return false;
+        }
+
+        const rect = canvasRef.current.getBoundingClientRect();
+        const graphDropPosition = {
+            x: (clientX - rect.left - offset.x) / scale,
+            y: (clientY - rect.top - offset.y) / scale,
+        };
+        const positionHint = {
+            x: graphDropPosition.x + (action.layoutHint?.xOffset ?? 0),
+            y: graphDropPosition.y + (action.layoutHint?.yOffset ?? 0),
+        };
+        const autoCreatedPosition = computeNodePosition(nodes, action.createNodeType, positionHint);
+
+        const clonedRuleData: Partial<NodeData['data']> = action.createNodeData
+            ? JSON.parse(JSON.stringify(action.createNodeData)) as Partial<NodeData['data']>
+            : {};
+        const initialData: Partial<NodeData['data']> = {
+            ...clonedRuleData,
+            autoCreateSource: {
+                nodeId: sourceNodeId,
+                portId: sourcePortId,
+                ruleId: action.id,
+            },
+        };
+
+        const initialConnections: Array<{
+            sourceNodeId?: string;
+            sourcePort: string;
+            targetNodeId?: string;
+            targetPort: string;
+        }> = [];
+
+        if (action.createTargetPortId) {
+            const virtualTargetNode: NodeData = {
+                id: '__auto-create-preview__',
+                type: action.createNodeType,
+                position: autoCreatedPosition,
+                data: {
+                    ...getInitialDataForNode(action.createNodeType),
+                    ...initialData,
+                },
+            };
+            const connectionRule = canConnect(
+                sourceNode,
+                sourcePortId,
+                virtualTargetNode,
+                action.createTargetPortId
+            );
+            if (!connectionRule.allow) {
+                return false;
+            }
+            initialConnections.push({
+                sourceNodeId,
+                sourcePort: sourcePortId,
+                targetPort: action.createTargetPortId,
+            });
+        }
+
+        const createdNodeId = addNode(action.createNodeType, autoCreatedPosition, {
+            editorOrigin: sourceNode.data.editorOrigin ?? 'nodes',
+            initialData,
+            initialConnections: initialConnections.length > 0 ? initialConnections : undefined,
+        });
+
+        return Boolean(createdNodeId);
+    }, [addNode, canvasRef, nodes, offset.x, offset.y, scale]);
 
     // Start connection dragging
     const startConnection = useCallback((nodeId: string, port: string, position: { x: number; y: number }) => {
@@ -249,20 +233,39 @@ export const useConnectionLogic = ({
             return true;
         };
 
-        const handleWindowPointerUp = (e: PointerEvent) => {
-            if (completeConnectionFromPoint(e.clientX, e.clientY)) {
+        const handleDropOnEmpty = (clientX: number, clientY: number) => {
+            const active = draggingConnectionRef.current;
+            if (!active) {
                 return;
             }
-            // Cancel connection if dropped on nothing
-            const active = draggingConnectionRef.current;
-            if (active) {
+
+            const autoCreateAction = maybeGetAutoCreateAction(active.sourceNodeId, active.sourcePort);
+            const hasAutoCreatedNode = autoCreateAction
+                ? executeAutoCreateAction(
+                    autoCreateAction,
+                    active.sourceNodeId,
+                    active.sourcePort,
+                    clientX,
+                    clientY
+                )
+                : false;
+
+            if (!hasAutoCreatedNode && canvasRef.current) {
+                const rect = canvasRef.current.getBoundingClientRect();
                 onConnectionDropOnEmpty?.({
-                    clientX: e.clientX,
-                    clientY: e.clientY,
+                    clientX: clientX - rect.left,
+                    clientY: clientY - rect.top,
                     sourceNodeId: active.sourceNodeId,
                     sourcePortId: active.sourcePort,
                 });
             }
+        };
+
+        const handleWindowPointerUp = (e: PointerEvent) => {
+            if (completeConnectionFromPoint(e.clientX, e.clientY)) {
+                return;
+            }
+            handleDropOnEmpty(e.clientX, e.clientY);
             setDraggingConnection(null);
             draggingConnectionRef.current = null;
         };
@@ -276,16 +279,7 @@ export const useConnectionLogic = ({
             if (completeConnectionFromPoint(e.clientX, e.clientY)) {
                 return;
             }
-            // Cancel connection if dropped on nothing
-            const active = draggingConnectionRef.current;
-            if (active) {
-                onConnectionDropOnEmpty?.({
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    sourceNodeId: active.sourceNodeId,
-                    sourcePortId: active.sourcePort,
-                });
-            }
+            handleDropOnEmpty(e.clientX, e.clientY);
             setDraggingConnection(null);
             draggingConnectionRef.current = null;
         };
@@ -303,7 +297,14 @@ export const useConnectionLogic = ({
             window.removeEventListener('mousemove', handleWindowMouseMove);
             window.removeEventListener('mouseup', handleWindowMouseUp);
         };
-    }, [draggingConnection?.sourceNodeId, draggingConnection?.sourcePort, canvasRef, onConnectionDropOnEmpty]);
+    }, [
+        draggingConnection?.sourceNodeId,
+        draggingConnection?.sourcePort,
+        canvasRef,
+        onConnectionDropOnEmpty,
+        maybeGetAutoCreateAction,
+        executeAutoCreateAction,
+    ]);
 
     // Function strictly for cleaning up or manual updates if needed
     const updateConnectionDrag = useCallback(() => {
@@ -365,213 +366,13 @@ export const useConnectionLogic = ({
 
         const finalSourceNode = nodes.find((node) => node.id === finalSourceId);
         const finalTargetNode = nodes.find((node) => node.id === finalTargetId);
-        const isLayerSourceOutput =
-            finalSourceNode?.type === 'layer-source' &&
-            !isInputPort(nodes, finalSourceId, finalSourcePort);
-        const isMeshBooleanOutput =
-            !!finalSourceNode &&
-            MESH_BOOLEAN_OUTPUT_SOURCE_NODE_TYPES.has(finalSourceNode.type) &&
-            finalSourcePort === MESH_BOOLEAN_OUTPUT_SOURCE_PORT;
-        const isTextDataOutput =
-            finalSourceNode?.type === TEXT_DATA_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === TEXT_DATA_OUTPUT_SOURCE_PORT;
-        const isPromptOutput =
-            finalSourceNode?.type === PROMPT_NODE_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === PROMPT_NODE_OUTPUT_SOURCE_PORT;
-        const isBackgroundColorOutput =
-            finalSourceNode?.type === BACKGROUND_NODE_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === BACKGROUND_NODE_OUTPUT_SOURCE_PORT;
-        const isInspectorOutput =
-            finalSourceNode?.type === INSPECTOR_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === INSPECTOR_OUTPUT_SOURCE_PORT;
-        const isAiAssistantOutput =
-            finalSourceNode?.type === AI_ASSISTANT_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === AI_ASSISTANT_OUTPUT_SOURCE_PORT;
-        const isNumberSliderOutput =
-            finalSourceNode?.type === NUMBER_SLIDER_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === NUMBER_SLIDER_OUTPUT_SOURCE_PORT;
-        const isTextOnMeshOutput =
-            finalSourceNode?.type === TEXT_ON_MESH_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === TEXT_ON_MESH_OUTPUT_SOURCE_PORT;
-        const isViewportOutput =
-            finalSourceNode?.type === VIEWPORT_NODE_OUTPUT_SOURCE_NODE_TYPE &&
-            finalSourcePort === VIEWPORT_NODE_OUTPUT_SOURCE_PORT;
-        const isModelMaterialInputTarget =
-            finalTargetNode?.type === 'model-material' && finalTargetPort === 'in-M';
-        const isModelMaterialNameInputTarget =
-            finalTargetNode?.type === 'model-material' && finalTargetPort === 'in-N';
-        const sourceIsBooleanToggle = finalSourceNode?.type === 'boolean-toggle';
-        const sourceIsUnitNode =
-            finalSourceNode?.type === 'unit-x' || finalSourceNode?.type === 'unit-y' || finalSourceNode?.type === 'unit-z';
-        const isBuild3dScopeTarget =
-            finalTargetNode?.type === 'build-3d-ai' && finalTargetPort === 'input-scope';
-        const isAiMeshInputTarget =
-            !!finalTargetNode &&
-            (finalTargetNode.type === 'ai-paint' || finalTargetNode.type === 'ai-sculpt') &&
-            finalTargetPort === 'input-mesh';
-        const isAiMeshOutputSource =
-            !!finalSourceNode &&
-            AI_MESH_OUTPUT_SOURCE_NODE_TYPES.has(finalSourceNode.type) &&
-            finalSourcePort === AI_MESH_OUTPUT_SOURCE_PORT;
-        const isLayerBridgeInputTarget =
-            !!finalTargetNode &&
-            finalTargetNode.type === 'layer-bridge' &&
-            isInputPort(nodes, finalTargetId, finalTargetPort) &&
-            isLayerBridgeInputPort(finalTargetPort);
-
-        if (isLayerBridgeInputTarget && (!finalSourceNode || !LAYER_BRIDGE_INPUT_WHITELIST_SET.has(finalSourceNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isLayerSourceOutput && (!finalTargetNode || !LAYER_SOURCE_OUTPUT_TARGET_WHITELIST.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isMeshBooleanOutput && (!finalTargetNode || !MESH_BOOLEAN_OUTPUT_TARGET_WHITELIST.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isTextDataOutput && (!finalTargetNode || !TEXT_DATA_OUTPUT_TARGET_WHITELIST.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isPromptOutput && (!finalTargetNode || !PROMPT_NODE_OUTPUT_TARGET_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isBackgroundColorOutput && (!finalTargetNode || !BACKGROUND_NODE_OUTPUT_TARGET_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isInspectorOutput && (!finalTargetNode || !INSPECTOR_OUTPUT_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isAiAssistantOutput && (!finalTargetNode || !AI_ASSISTANT_OUTPUT_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isNumberSliderOutput && (!finalTargetNode || !NUMBER_SLIDER_OUTPUT_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isTextOnMeshOutput && (!finalTargetNode || !TEXT_ON_MESH_OUTPUT_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isViewportOutput && (!finalTargetNode || !VIEWPORT_NODE_OUTPUT_TARGET_WHITELIST_SET.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isAiMeshOutputSource && !isAllowedAiMeshOutputTargetType(finalSourceNode?.type, finalTargetNode?.type)) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isAiMeshInputTarget && (!finalSourceNode || !AI_MESH_INPUT_WHITELIST.has(finalSourceNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isModelMaterialInputTarget && (!finalSourceNode || !MODEL_MATERIAL_INPUT_WHITELIST.has(finalSourceNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isModelMaterialNameInputTarget && finalSourceNode?.type !== 'node-prompt') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (sourceIsBooleanToggle && finalTargetNode?.type !== 'panel') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (sourceIsUnitNode && finalTargetNode?.type !== 'panel') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (isBuild3dScopeTarget && finalSourceNode?.type !== 'panel') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        const isVectorXyzVectorOutput =
-            finalSourceNode?.type === 'vector-xyz' && finalSourcePort === 'V';
-        if (isVectorXyzVectorOutput && finalTargetNode?.type !== 'transform') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-        const isTransformMatrixOutput =
-            finalSourceNode?.type === 'transform' && finalSourcePort === 'matrix_out';
-        if (isTransformMatrixOutput && (!finalTargetNode || !TRANSFORM_MATRIX_OUTPUT_WHITELIST.has(finalTargetNode.type))) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-        if (isTransformMatrixOutput && finalTargetPort !== 'input-transform') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-        const isAiMaskInputTarget =
-            !!finalTargetNode &&
-            AI_MASK_TARGET_NODE_TYPES.has(finalTargetNode.type) &&
-            finalTargetPort === AI_MASK_TARGET_INPUT_PORT;
-        if (isAiMaskInputTarget && finalSourceNode?.type !== AI_MASK_ALLOWED_SOURCE_NODE_TYPE) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        const isAiPlanInputTarget =
-            !!finalTargetNode &&
-            (finalTargetNode.type === 'ai-paint' || finalTargetNode.type === 'ai-sculpt') &&
-            finalTargetPort === 'input-plan';
-
-        if (isAiPlanInputTarget && finalSourceNode?.type !== 'panel') {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        const finalSourceIsInputPort = isInputPort(nodes, finalSourceId, finalSourcePort);
-        const finalTargetIsInputPort = isInputPort(nodes, finalTargetId, finalTargetPort);
-        const sourceIsRestrictedMeshInput =
-            finalSourceIsInputPort && isMeshBooleanInputPort(finalSourceNode?.type, finalSourcePort);
-        const targetIsRestrictedMeshInput =
-            finalTargetIsInputPort && isMeshBooleanInputPort(finalTargetNode?.type, finalTargetPort);
-
-        if (sourceIsRestrictedMeshInput || targetIsRestrictedMeshInput) {
-            const peerNodeType = sourceIsRestrictedMeshInput ? finalTargetNode?.type : finalSourceNode?.type;
-            if (!peerNodeType || !MESH_BOOLEAN_INPUT_WHITELIST.has(peerNodeType)) {
-                if (!overrideSource) setDraggingConnection(null);
-                return;
-            }
-        }
-
-        const sourceAllowedNodeType = finalSourceIsInputPort
-            ? getMeshBooleanInputAllowedSourceNodeType(finalSourceNode?.type, finalSourcePort)
-            : null;
-        const targetAllowedNodeType = finalTargetIsInputPort
-            ? getMeshBooleanInputAllowedSourceNodeType(finalTargetNode?.type, finalTargetPort)
-            : null;
-
-        if (sourceAllowedNodeType && finalTargetNode?.type !== sourceAllowedNodeType) {
-            if (!overrideSource) setDraggingConnection(null);
-            return;
-        }
-
-        if (targetAllowedNodeType && finalSourceNode?.type !== targetAllowedNodeType) {
+        const connectionRule = canConnect(
+            finalSourceNode,
+            finalSourcePort,
+            finalTargetNode,
+            finalTargetPort
+        );
+        if (!connectionRule.allow) {
             if (!overrideSource) setDraggingConnection(null);
             return;
         }

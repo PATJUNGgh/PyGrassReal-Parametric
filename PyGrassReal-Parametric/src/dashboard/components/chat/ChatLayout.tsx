@@ -5,7 +5,7 @@ interface ChatLayoutProps {
   children: React.ReactNode;
 }
 
-export const ChatLayout: React.FC<ChatLayoutProps> = ({ children }) => {
+export const ChatLayout = React.memo(({ children }: ChatLayoutProps) => {
   return (
     <div className="chat-layout-wrapper">
       <div className="chat-layout-container">
@@ -13,4 +13,6 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ children }) => {
       </div>
     </div>
   );
-};
+});
+
+ChatLayout.displayName = 'ChatLayout';

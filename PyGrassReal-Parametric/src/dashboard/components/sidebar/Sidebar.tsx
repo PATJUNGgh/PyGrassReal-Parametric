@@ -1,10 +1,23 @@
-import { LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import React from 'react';
-import { DASHBOARD_ROUTES, SETTINGS_ROUTE } from '../../constants/routes';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { DASHBOARD_ROUTES } from '../../constants/routes';
+import { localizeText, useLanguage, type LocalizedText } from '../../../i18n/language';
+import { DASHBOARD_UI, TOPBAR_UI } from '../../data/dashboardData';
+import { useProfile } from '../../../auth/hooks/useProfile';
+import { UserProfileButton } from './UserProfileButton';
+import { hasPlatformRevenueAccess } from '../../utils/platformRevenueAccess';
 
-import logoIcon from '../../../assets/logo-icon.png';
+import logoIcon from '../../../assets/logo-icon-768.png';
 
-export type DashboardRoute = '/dashboard' | '/dashboard/chat' | '/dashboard/settings';
+export type DashboardRoute =
+  | '/dashboard'
+  | '/dashboard/chat'
+  | '/dashboard/api'
+  | '/dashboard/usage'
+  | '/dashboard/ranking'
+  | '/dashboard/benchmark'
+  | '/dashboard/revenue'
+  | '/dashboard/settings';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -14,32 +27,86 @@ interface SidebarProps {
   onSignOut: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+interface SidebarNavItemProps {
+  icon: React.ElementType;
+  label: LocalizedText;
+  isActive: boolean;
+  onClick: () => void;
+  title?: string;
+  danger?: boolean;
+}
+
+const SidebarNavItem = React.memo(({
+  icon: Icon, label, isActive, onClick, title, danger
+}: SidebarNavItemProps) => {
+  const { language } = useLanguage();
+  const labelText = localizeText(language, label);
+  return (
+    <button
+      type="button"
+      className={`dashboard-sidebar-btn ${isActive ? 'is-active' : ''} ${danger ? 'is-danger' : ''}`}
+      onClick={onClick}
+      title={title || labelText}
+    >
+      <Icon size={18} />
+      <span className="sidebar-label">{labelText}</span>
+    </button>
+  );
+});
+
+SidebarNavItem.displayName = 'SidebarNavItem';
+
+export const Sidebar = React.memo(({
   isOpen,
   onToggle,
   activeRoute,
   onNavigate,
   onSignOut,
-}) => {
+}: SidebarProps) => {
+  const { language } = useLanguage();
+  const { displayName, email, avatarUrl, isLoading } = useProfile();
+  
+  const handleNavClick = useCallback((path: string) => {
+    onNavigate(path);
+  }, [onNavigate]);
+  const handleHomeClick = useCallback(() => {
+    onNavigate('/');
+  }, [onNavigate]);
+
   const isRouteActive = (path: string) => activeRoute === path;
+  const visibleRoutes = DASHBOARD_ROUTES.filter((route) => (
+    route.path !== '/dashboard/revenue' || hasPlatformRevenueAccess(email)
+  ));
+
+  const toggleLabel = isOpen 
+    ? localizeText(language, DASHBOARD_UI.collapse) 
+    : localizeText(language, TOPBAR_UI.openSidebar);
 
   return (
     <aside className={`dashboard-sidebar ${!isOpen ? 'is-closed' : ''}`}>
       <div className="dashboard-sidebar-logo-wrapper">
-        <img src={logoIcon} alt="PyGrassReal Logo" className="dashboard-sidebar-logo" />
+        <button
+          type="button"
+          className="dashboard-sidebar-logo-button"
+          onClick={handleHomeClick}
+          title={localizeText(language, { th: 'หน้าแรก', en: 'Home' })}
+          aria-label={localizeText(language, { th: 'ไปหน้าแรก', en: 'Go to home' })}
+        >
+          <img src={logoIcon} alt="PyGrassReal-Ai Logo" className="dashboard-sidebar-logo" />
+        </button>
       </div>
       <nav className="dashboard-nav">
         <button
           type="button"
           className="dashboard-sidebar-btn dashboard-sidebar-toggle"
           onClick={onToggle}
-          title={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          title={isOpen ? localizeText(language, TOPBAR_UI.closeSidebar) : localizeText(language, TOPBAR_UI.openSidebar)}
           aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {isOpen ? (
             <>
               <PanelLeftClose size={18} />
-              <span className="sidebar-label">Collapse</span>
+              <span className="sidebar-label">{toggleLabel}</span>
             </>
           ) : (
             <span className="sidebar-toggle-collapsed-content" aria-hidden="true">
@@ -53,42 +120,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {DASHBOARD_ROUTES.map((route) => (
-          <button
+        {visibleRoutes.map((route) => (
+          <SidebarNavItem
             key={route.path}
-            type="button"
-            className={`dashboard-sidebar-btn ${isRouteActive(route.path) ? 'is-active' : ''}`}
-            onClick={() => onNavigate(route.path)}
-            title={route.label}
-          >
-            <route.icon size={18} />
-            <span className="sidebar-label">{route.label}</span>
-          </button>
+            icon={route.icon}
+            label={route.label}
+            isActive={isRouteActive(route.path)}
+            onClick={() => handleNavClick(route.path)}
+          />
         ))}
       </nav>
 
       <div className="dashboard-sidebar-footer">
-        <button
-          type="button"
-          className={`dashboard-sidebar-btn ${isRouteActive(SETTINGS_ROUTE.path) ? 'is-active' : ''}`}
-          onClick={() => onNavigate(SETTINGS_ROUTE.path)}
-          title={SETTINGS_ROUTE.label}
-        >
-          <SETTINGS_ROUTE.icon size={18} />
-          <span className="sidebar-label">{SETTINGS_ROUTE.label}</span>
-        </button>
-
-        <button
-          type="button"
-          className="dashboard-sidebar-btn is-danger"
-          onClick={onSignOut}
-          title="Sign out"
-        >
-          <LogOut size={18} />
-          <span className="sidebar-label">Sign out</span>
-        </button>
+        <UserProfileButton
+          displayName={displayName}
+          email={email}
+          avatarUrl={avatarUrl}
+          isLoading={isLoading}
+          onSignOut={onSignOut}
+          onNavigate={onNavigate}
+          activeRoute={activeRoute}
+        />
       </div>
     </aside>
   );
-};
+});
 
+Sidebar.displayName = 'Sidebar';

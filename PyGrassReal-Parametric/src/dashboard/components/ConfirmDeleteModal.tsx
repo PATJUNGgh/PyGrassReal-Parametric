@@ -1,5 +1,8 @@
+import React from 'react';
 import type { Workflow } from '../types/workflow.types';
-import { Modal } from './Modal';
+import Modal from './Modal';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { MODAL_UI } from '../data/dashboardData';
 
 interface ConfirmDeleteModalProps {
   workflow: Workflow | null;
@@ -8,21 +11,22 @@ interface ConfirmDeleteModalProps {
   onConfirm: () => Promise<void>;
 }
 
-export function ConfirmDeleteModal({
+export const ConfirmDeleteModal = React.memo(({
   workflow,
   isDeleting,
   onClose,
   onConfirm,
-}: ConfirmDeleteModalProps) {
+}: ConfirmDeleteModalProps) => {
+  const { language } = useLanguage();
   if (!workflow) return null;
 
   const footer = (
     <>
       <button type="button" className="is-secondary" onClick={onClose} disabled={isDeleting}>
-        Cancel
+        {localizeText(language, MODAL_UI.cancel)}
       </button>
       <button type="button" className="is-danger" onClick={onConfirm} disabled={isDeleting}>
-        {isDeleting ? 'Deleting...' : 'Delete workflow'}
+        {localizeText(language, isDeleting ? MODAL_UI.deleting : MODAL_UI.delete)}
       </button>
     </>
   );
@@ -31,12 +35,14 @@ export function ConfirmDeleteModal({
     <Modal
       isOpen={!!workflow}
       onClose={onClose}
-      title="Delete workflow"
+      title={localizeText(language, MODAL_UI.deleteTitle)}
       footer={footer}
     >
       <p>
-        Delete <strong>{workflow.name}</strong>? This action cannot be undone.
+        {localizeText(language, MODAL_UI.deleteConfirm(workflow.name))}
       </p>
     </Modal>
   );
-}
+});
+
+ConfirmDeleteModal.displayName = 'ConfirmDeleteModal';

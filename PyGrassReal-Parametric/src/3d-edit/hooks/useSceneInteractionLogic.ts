@@ -59,6 +59,7 @@ export function useSceneInteractionLogic({
         isGizmoDraggingRef,
         isHandleDragging,
         isHandleHovered,
+        handlesHoveredRef,
         draggingAxis,
         isScalingHandle,
         resolveSelectionTargetId,
@@ -74,13 +75,14 @@ export function useSceneInteractionLogic({
             isGizmoDraggingRef,
             isHandleDragging,
             isHandleHovered,
+            handlesHoveredRef,
             draggingAxis,
             isScalingHandle,
             resolveSelectionTargetId,
             onBackgroundDoubleClick,
             onDeselectAll
         };
-    }, [selectedIds, interactionMode, isGumballDragging, isGizmoDraggingRef, isHandleDragging, isHandleHovered, draggingAxis, isScalingHandle, resolveSelectionTargetId, onBackgroundDoubleClick, onDeselectAll]);
+    }, [selectedIds, interactionMode, isGumballDragging, isGizmoDraggingRef, isHandleDragging, isHandleHovered, handlesHoveredRef, draggingAxis, isScalingHandle, resolveSelectionTargetId, onBackgroundDoubleClick, onDeselectAll]);
 
     const findSceneIdFromObject = useCallback((obj: THREE.Object3D | null): string | null => {
         let current: THREE.Object3D | null = obj;
@@ -92,22 +94,14 @@ export function useSceneInteractionLogic({
         return null;
     }, []);
 
-    const collectRaycastTargets = useCallback((): THREE.Object3D[] => {
-        const targets: THREE.Object3D[] = [];
-        scene.traverse((obj) => {
-            if (obj.userData?.isScopeBox) {
-                targets.push(obj);
-                return;
-            }
-            const sceneId = obj.userData?.sceneId;
-            if (typeof sceneId !== 'string' || sceneId.length === 0) return;
-            const sceneObj = sceneObjectMap.get(sceneId);
-            if (sceneObj?.isGhost) return;
-            if (!obj.visible) return;
-            targets.push(obj);
-        });
-        return targets;
-    }, [scene, sceneObjectMap]);
+    const isSelectionHelperObject = useCallback((obj: THREE.Object3D | null): boolean => {
+        let current: THREE.Object3D | null = obj;
+        while (current) {
+            if (current.userData?.isSelectionHelper) return true;
+            current = current.parent;
+        }
+        return false;
+    }, []);
 
     const raycastMetaAtClientPoint = useCallback((clientX: number, clientY: number) => {
         const rect = gl.domElement.getBoundingClientRect();
@@ -117,27 +111,37 @@ export function useSceneInteractionLogic({
         );
 
         raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(collectRaycastTargets(), true);
-        
+        const hits = raycaster.intersectObjects(scene.children, true);
+
         for (const hit of hits) {
+            if (isSelectionHelperObject(hit.object)) {
+                return { sceneId: null, hitNonSelectable: true };
+            }
+
             const sceneId = findSceneIdFromObject(hit.object);
-            if (sceneId) return { sceneId, hitNonSelectable: false };
+            if (!sceneId) continue;
+
+            const sceneObj = sceneObjectMap.get(sceneId);
+            if (sceneObj?.isGhost) continue;
+
+            return { sceneId, hitNonSelectable: false };
         }
 
-        const allHits = raycaster.intersectObjects(scene.children, true);
-        const hitNonSelectable = allHits.some(hit => {
-            let curr: THREE.Object3D | null = hit.object;
-            while (curr) {
-                if (curr.userData?.isSelectionHelper) return true;
-                curr = curr.parent;
-            }
-            return false;
-        });
-
-        return { sceneId: null, hitNonSelectable };
-    }, [camera, collectRaycastTargets, findSceneIdFromObject, gl, raycaster, scene]);
+        return { sceneId: null, hitNonSelectable: false };
+    }, [camera, findSceneIdFromObject, gl, isSelectionHelperObject, raycaster, scene, sceneObjectMap]);
 
     const applySelection = useCallback((sceneId: string, event: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }) => {
+        if (
+            stateRef.current.isGumballDragging ||
+            stateRef.current.isHandleDragging ||
+            stateRef.current.isScalingHandle ||
+            stateRef.current.draggingAxis !== null ||
+            stateRef.current.handlesHoveredRef.current ||
+            stateRef.current.isGizmoDraggingRef.current
+        ) {
+            return;
+        }
+
         const targetId = stateRef.current.resolveSelectionTargetId(sceneId);
         const isMultiSelect = event.shiftKey || event.ctrlKey || event.metaKey;
         const currentIds = stateRef.current.selectedIds || new Set();
@@ -175,7 +179,11 @@ export function useSceneInteractionLogic({
 
             // IF GUMBALL IS HIT, LOCK IT IMMEDIATELY
             if (hit.hitNonSelectable) {
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
                 stateRef.current.isGizmoDraggingRef.current = true;
+                selectionAppliedOnDownRef.current = null;
                 clickCandidateRef.current = false;
                 return;
             }
@@ -199,6 +207,9 @@ export function useSceneInteractionLogic({
 
             // Priority Guard
             if (stateRef.current.isGizmoDraggingRef.current || stateRef.current.isGumballDragging || stateRef.current.isHandleDragging) {
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
                 clickCandidateRef.current = false;
                 resetInteractionState();
                 return;

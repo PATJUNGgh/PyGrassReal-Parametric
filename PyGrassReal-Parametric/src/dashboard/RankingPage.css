@@ -1,0 +1,186 @@
+.ranking-page-container {
+  padding: 1rem 1.7rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.ranking-page-header {
+  margin-bottom: 24px;
+}
+
+.ranking-page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-gray-100);
+}
+
+.ranking-page-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-gray-400);
+}
+
+.ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.ranking-card {
+  background: var(--bg-surface, rgba(20, 24, 32, 0.4));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+}
+
+.ranking-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ranking-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.ranking-card-icon.purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+.ranking-card-icon.emerald {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.ranking-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-gray-100);
+  margin: 0;
+}
+
+/* Big Stat Number */
+.ranking-stat-big {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--color-gray-50);
+  margin-top: 20px;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.ranking-stat-label {
+  font-size: 0.875rem;
+  color: var(--color-gray-400);
+}
+
+/* Lists */
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ranking-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.ranking-list-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ranking-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ranking-position {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-gray-500);
+  width: 24px;
+}
+
+.ranking-position[data-rank="1"] { color: #facc15; } /* Gold */
+.ranking-position[data-rank="2"] { color: #94a3b8; } /* Silver */
+.ranking-position[data-rank="3"] { color: #b45309; } /* Bronze */
+
+.ranking-item-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-gray-100);
+  text-transform: capitalize;
+}
+
+.ranking-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.ranking-item-count {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-gray-100);
+}
+
+.ranking-item-sub {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+/* Loading state */
+.ranking-loading-state,
+.ranking-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-gray-400);
+  background: var(--bg-surface, rgba(20, 24, 32, 0.4));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  min-height: 300px;
+}
+
+.ranking-error-state {
+  color: #ef4444;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .ranking-grid {
+    grid-template-columns: 1fr;
+  }
+}

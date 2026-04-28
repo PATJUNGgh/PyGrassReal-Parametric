@@ -1,9 +1,12 @@
+import React, { useMemo } from 'react';
 import { ArrowUpDown, Filter, Search } from 'lucide-react';
 import type {
   WorkflowOwnerFilter,
   WorkflowSort,
   WorkflowStatus,
 } from '../types/workflow.types';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { TOOLBAR_UI } from '../data/dashboardData';
 
 interface ToolbarSearchSortProps {
   searchTerm: string;
@@ -16,7 +19,36 @@ interface ToolbarSearchSortProps {
   onOwnerFilterChange: (next: WorkflowOwnerFilter) => void;
 }
 
-export function ToolbarSearchSort({
+interface ToolbarSelectProps<T extends string> {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: Array<{ value: T; label: string }>;
+  icon?: React.ReactNode;
+  ariaLabel: string;
+}
+
+function ToolbarSelect<T extends string>({
+  label, value, onChange, options, icon, ariaLabel
+}: ToolbarSelectProps<T>) {
+  return (
+    <label className="dashboard-select">
+      {icon}
+      <span>{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+        aria-label={ariaLabel}
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export const ToolbarSearchSort = React.memo(({
   searchTerm,
   onSearchChange,
   sortBy,
@@ -25,7 +57,26 @@ export function ToolbarSearchSort({
   onStatusFilterChange,
   ownerFilter,
   onOwnerFilterChange,
-}: ToolbarSearchSortProps) {
+}: ToolbarSearchSortProps) => {
+  const { language: lang } = useLanguage();
+
+  const sortOptions = useMemo(() => [
+    { value: 'updated_desc' as const, label: localizeText(lang, TOOLBAR_UI.sortOptions.updated_desc) },
+    { value: 'created_desc' as const, label: localizeText(lang, TOOLBAR_UI.sortOptions.created_desc) },
+    { value: 'name_asc' as const, label: localizeText(lang, TOOLBAR_UI.sortOptions.name_asc) },
+  ], [lang]);
+
+  const statusOptions = useMemo(() => [
+    { value: 'all' as const, label: localizeText(lang, TOOLBAR_UI.statusOptions.all) },
+    { value: 'active' as const, label: localizeText(lang, TOOLBAR_UI.statusOptions.active) },
+    { value: 'inactive' as const, label: localizeText(lang, TOOLBAR_UI.statusOptions.inactive) },
+  ], [lang]);
+
+  const ownerOptions = useMemo(() => [
+    { value: 'mine' as const, label: localizeText(lang, TOOLBAR_UI.ownerOptions.mine) },
+    { value: 'all' as const, label: localizeText(lang, TOOLBAR_UI.ownerOptions.all) },
+  ], [lang]);
+
   return (
     <section className="dashboard-toolbar">
       <label className="dashboard-search">
@@ -33,59 +84,46 @@ export function ToolbarSearchSort({
         <input
           type="text"
           value={searchTerm}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search workflows"
-          aria-label="Search workflows"
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={localizeText(lang, TOOLBAR_UI.searchPlaceholder)}
+          aria-label={localizeText(lang, TOOLBAR_UI.searchPlaceholder)}
+          maxLength={100}
         />
       </label>
 
       <div className="dashboard-toolbar-controls">
         <div className="dashboard-chip">
           <Filter size={14} />
-          Filters
+          {localizeText(lang, TOOLBAR_UI.filters)}
         </div>
 
-        <label className="dashboard-select">
-          <ArrowUpDown size={14} />
-          <span>Sort</span>
-          <select
-            value={sortBy}
-            onChange={(event) => onSortByChange(event.target.value as WorkflowSort)}
-            aria-label="Sort workflows"
-          >
-            <option value="updated_desc">Updated (latest)</option>
-            <option value="created_desc">Created (latest)</option>
-            <option value="name_asc">Name A-Z</option>
-          </select>
-        </label>
+        <ToolbarSelect
+          label={localizeText(lang, TOOLBAR_UI.sort)}
+          value={sortBy}
+          onChange={onSortByChange}
+          icon={<ArrowUpDown size={14} />}
+          ariaLabel="Sort workflows"
+          options={sortOptions}
+        />
 
-        <label className="dashboard-select">
-          <span>Status</span>
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              onStatusFilterChange(event.target.value as WorkflowStatus | 'all')
-            }
-            aria-label="Filter by status"
-          >
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </label>
+        <ToolbarSelect
+          label={localizeText(lang, TOOLBAR_UI.status)}
+          value={statusFilter}
+          onChange={onStatusFilterChange}
+          ariaLabel="Filter by status"
+          options={statusOptions}
+        />
 
-        <label className="dashboard-select">
-          <span>Owner</span>
-          <select
-            value={ownerFilter}
-            onChange={(event) => onOwnerFilterChange(event.target.value as WorkflowOwnerFilter)}
-            aria-label="Filter by owner"
-          >
-            <option value="mine">My workflows</option>
-            <option value="all">All owners</option>
-          </select>
-        </label>
+        <ToolbarSelect
+          label={localizeText(lang, TOOLBAR_UI.owner)}
+          value={ownerFilter}
+          onChange={onOwnerFilterChange}
+          ariaLabel="Filter by owner"
+          options={ownerOptions}
+        />
       </div>
     </section>
   );
-}
+});
+
+ToolbarSearchSort.displayName = 'ToolbarSearchSort';

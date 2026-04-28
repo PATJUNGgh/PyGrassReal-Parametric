@@ -19,5 +19,15 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message:
+            'Avoid dangerouslySetInnerHTML. Use sanitized rendering (for example DOMPurify) and security review first.',
+        },
+      ],
+    },
   },
 ])

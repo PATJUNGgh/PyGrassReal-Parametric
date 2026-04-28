@@ -19,6 +19,7 @@ import { UnitXNode } from './UnitXNode';
 import { UnitZNode } from './UnitZNode';
 import { TransformNode } from './TransformNode';
 import { Build3DAiNode } from './Build3DAiNode';
+import { AiAgentNode } from './AiAgentNode';
 import { VertexMaskNode } from './VertexMaskNode';
 import { AiSculptNode } from './AiSculptNode';
 import { AiPaintNode } from './AiPaintNode';
@@ -240,6 +241,15 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
                     return <TransformNode key={node.id} {...commonProps} {...interactProps} nodes={nodes} nodeType={node.type} />;
                 } else if (node.type === 'build-3d-ai') {
                     return <Build3DAiNode key={node.id} {...commonProps} {...interactProps} nodeType={node.type} />;
+                } else if (node.type === 'ai-agent') {
+                    return (
+                        <AiAgentNode
+                            key={node.id}
+                            {...commonProps}
+                            {...interactProps}
+                            connections={connections}
+                        />
+                    );
                 } else if (node.type === 'vertex-mask') {
                     return (
                         <VertexMaskNode

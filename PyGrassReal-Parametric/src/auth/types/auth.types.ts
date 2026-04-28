@@ -1,6 +1,9 @@
+export type AuthErrorKind = 'auth' | 'network' | 'unknown';
+
 export interface AuthResult {
   ok: boolean;
   message?: string;
+  errorKind?: AuthErrorKind;
 }
 
 export type AuthNoticeTone = 'success' | 'error';

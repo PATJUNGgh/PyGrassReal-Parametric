@@ -4,27 +4,41 @@ import { ChatHistoryMainView } from './ChatHistoryMainView';
 import { ChatHistoryProjectView } from './ChatHistoryProjectView';
 import { ProjectPromptModal } from './ProjectPromptModal';
 import { useChatHistory } from '../../hooks/useChatHistory';
+import { localizeText, useLanguage } from '../../../i18n/language';
+import { CHAT_HISTORY_UI } from '../../data/chatData';
 import './ChatHistoryDrawer.css';
 
 interface ChatHistoryDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onNewProject: () => void;
+  onSelectChat: (id: string) => void;
+  pushToast?: (message: string, tone?: 'success' | 'error') => void;
+  getErrorMessage?: (error: unknown) => string;
 }
 
-export const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
+export const ChatHistoryDrawer = React.memo(({
   isOpen,
   onClose,
-}) => {
+  onNewProject,
+  onSelectChat,
+  pushToast,
+  getErrorMessage
+}: ChatHistoryDrawerProps) => {
+  const { language } = useLanguage();
   const {
     confirmingDeleteId,
     confirmingDeleteProjectId,
     activeProjectId,
+    activeProject,
+    projectItems,
+    recentItems,
     isPromptOpen,
     newProjectName,
     setNewProjectName,
     projects,
     historyItems,
+    projectItemCounts,
     handleDelete,
     handleDeleteProject,
     handleNewFile,
@@ -35,12 +49,11 @@ export const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
     handleDrop,
     handleOpenProject,
     handleBackToMain,
-  } = useChatHistory();
+  } = useChatHistory({ pushToast, getErrorMessage, isOpen });
 
   if (!isOpen) return null;
 
-  const activeProject = projects.find(p => p.id === activeProjectId);
-  const projectItems = historyItems.filter(item => item.projectId === activeProjectId);
+  const isProjectView = !!(activeProjectId && activeProject);
 
   return (
     <>
@@ -53,21 +66,7 @@ export const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
           </div>
 
           <div className="drawer-content">
-            {!activeProjectId ? (
-              <ChatHistoryMainView
-                projects={projects}
-                historyItems={historyItems}
-                confirmingDeleteProjectId={confirmingDeleteProjectId}
-                confirmingDeleteId={confirmingDeleteId}
-                handleCreateNewProject={handleCreateNewProject}
-                handleOpenProject={handleOpenProject}
-                handleDeleteProject={handleDeleteProject}
-                handleDrop={handleDrop}
-                handleNewFile={handleNewFile}
-                handleDelete={handleDelete}
-                handleDragStart={handleDragStart}
-              />
-            ) : activeProject ? (
+            {isProjectView ? (
               <ChatHistoryProjectView
                 activeProject={activeProject}
                 projectItems={projectItems}
@@ -77,13 +76,31 @@ export const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
                 handleDrop={handleDrop}
                 handleDelete={handleDelete}
                 handleDragStart={handleDragStart}
+                onSelectChat={onSelectChat}
               />
-            ) : null}
+            ) : (
+              <ChatHistoryMainView
+                projects={projects}
+                historyItems={historyItems}
+                recentItems={recentItems}
+                projectItemCounts={projectItemCounts}
+                confirmingDeleteProjectId={confirmingDeleteProjectId}
+                confirmingDeleteId={confirmingDeleteId}
+                handleCreateNewProject={handleCreateNewProject}
+                handleOpenProject={handleOpenProject}
+                handleDeleteProject={handleDeleteProject}
+                handleDrop={handleDrop}
+                handleNewFile={handleNewFile}
+                handleDelete={handleDelete}
+                handleDragStart={handleDragStart}
+                onSelectChat={onSelectChat}
+              />
+            )}
           </div>
 
           <div className="drawer-footer">
             <div className="footer-status">
-              Connected to PyGrass Real-Time Engine
+              {localizeText(language, CHAT_HISTORY_UI.footerStatus)}
             </div>
           </div>
         </div>
@@ -98,4 +115,6 @@ export const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
       />
     </>
   );
-};
+});
+
+ChatHistoryDrawer.displayName = 'ChatHistoryDrawer';

@@ -1,9 +1,11 @@
-import logoIcon from '../assets/logo-icon.png';
+import { useAuthSession } from '../auth/hooks/useAuthSession';
+import { localizeText, useLanguage } from '../i18n/language';
 import { AiProfilesSection } from './components/AiProfilesSection';
 import { FeatureGrid } from './components/FeatureGrid';
-import { Footer } from './components/Footer';
 import { HeroSection } from './components/HeroSection';
+import { MainLayout } from './components/MainLayout';
 import { UseCaseGrid } from './components/UseCaseGrid';
+import { getTopbarNavigation } from './config/navigation';
 import './pages.css';
 
 interface LandingPageProps {
@@ -11,41 +13,31 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onNavigate }: LandingPageProps) {
+  const { language } = useLanguage();
+  const { isAuthenticated } = useAuthSession();
+  const topbarItems = getTopbarNavigation('landing', language, isAuthenticated);
+
   return (
-    <div className="pg-page">
-      <div className="pg-background-glow" aria-hidden="true" />
-      <div className="pg-background-grid" aria-hidden="true" />
-      <div className="pg-background-dots" aria-hidden="true" />
-
-      <header className="pg-topbar">
-        <button type="button" className="pg-brand" onClick={() => onNavigate('/')}>
-          <img src={logoIcon} alt="PyGrassReal-Ai Logo" className="pg-brand-logo" />
-          <span>PyGrassReal-Ai</span>
-        </button>
-        <nav className="pg-topnav" aria-label="Landing navigation">
-          <button type="button" onClick={() => onNavigate('/about')}>
-            About
-          </button>
-          <button type="button" onClick={() => onNavigate('/docs')}>
-            Docs
-          </button>
-          <button type="button" className="pg-topnav-plan" onClick={() => onNavigate('/pricing')}>
-            Upgrade plan
-          </button>
-          <button type="button" className="pg-topnav-cta" onClick={() => onNavigate('/auth/login')}>
-            Sign in
-          </button>
-        </nav>
-      </header>
-
+    <MainLayout
+      onNavigate={onNavigate}
+      topbarItems={topbarItems}
+      isAuthenticated={isAuthenticated}
+      pageTitle={localizeText(language, {
+        th: 'หน้าแรก',
+        en: 'Home',
+      })}
+      pageDescription={localizeText(language, {
+        th: 'ตัวแก้ไข Node พลัง AI สำหรับงานโมเดล 3D และการออกแบบเชิงคำนวณ',
+        en: 'AI-powered Node Editor for 3D modeling and computational design.',
+      })}
+    >
       <main className="pg-main">
-        <HeroSection onOpenDashboard={() => onNavigate('/dashboard')} onOpenEditor={() => onNavigate('/editor')} />
-        <AiProfilesSection onNavigate={onNavigate} />
+        <HeroSection />
+        <AiProfilesSection />
         <FeatureGrid />
         <UseCaseGrid />
       </main>
-
-      <Footer onNavigate={onNavigate} />
-    </div>
+    </MainLayout>
   );
 }
+

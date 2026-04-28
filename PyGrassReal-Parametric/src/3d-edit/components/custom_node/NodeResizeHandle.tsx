@@ -15,6 +15,8 @@ export const NodeResizeHandle: React.FC<NodeResizeHandleProps> = ({
 
     return (
         <div
+            className="node-resize-handle resize-handle"
+            data-resize-handle="true"
             onMouseDown={onResizeMouseDown}
             onPointerDown={(e) => e.stopPropagation()}
             style={{

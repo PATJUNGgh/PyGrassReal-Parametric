@@ -1,54 +1,74 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, LayoutDashboard, RefreshCw, XCircle } from 'lucide-react';
-import { getCheckoutSession } from './services/checkout.api';
-import type { CheckoutSession } from './types/pricing.types';
+import { useProfile } from '../auth/hooks/useProfile';
+import {
+  fetchSubscriptionTransactionBySession,
+  type SubscriptionTransaction,
+} from './services/subscriptionBilling.api';
 import './pricing.css';
 
 interface PricingCancelPageProps {
   onNavigate: (path: string) => void;
 }
 
-const toStatusMessage = (session: CheckoutSession | null): string => {
-  if (!session) return 'No checkout session was found for this request.';
-  if (session.status === 'expired') return 'Your payment session expired before confirmation.';
-  if (session.status === 'cancelled') return 'Payment was cancelled before completion.';
-  if (session.status === 'pending') return 'Payment is still pending. You can continue checkout.';
+const toStatusMessage = (tx: SubscriptionTransaction | null): string => {
+  if (!tx) return 'No checkout session was found for this request.';
+  if (tx.status === 'expired') return 'Your payment session expired before confirmation.';
+  if (tx.status === 'cancelled') return 'Payment was cancelled before completion.';
+  if (tx.status === 'failed') return 'Payment failed. Please try again.';
+  if (tx.status === 'pending') return 'Payment is still pending. You can continue checkout.';
   return 'Payment result is not available for this checkout state.';
 };
 
 export function PricingCancelPage({ onNavigate }: PricingCancelPageProps) {
-  const [session, setSession] = useState<CheckoutSession | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [transaction, setTransaction] = useState<SubscriptionTransaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const profile = useProfile();
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadSession = async () => {
+    const loadTransaction = async () => {
       setIsLoading(true);
+
+      if (profile.isLoading) {
+        return;
+      }
+
+      if (!profile.id) {
+        onNavigate('/auth/login');
+        return;
+      }
+
       const query = new URLSearchParams(window.location.search);
       const sessionId = query.get('session');
 
       if (!sessionId) {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
         return;
       }
 
-      const resolved = await getCheckoutSession(sessionId);
-      if (!cancelled) {
-        if (resolved?.status === 'paid') {
-          onNavigate(`/pricing/success?session=${encodeURIComponent(resolved.session_id)}`);
-          return;
-        }
-        setSession(resolved);
-        setIsLoading(false);
+      const resolved = await fetchSubscriptionTransactionBySession(sessionId);
+      if (cancelled) {
+        return;
       }
+
+      if (resolved?.status === 'paid') {
+        onNavigate(`/pricing/success?session=${encodeURIComponent(sessionId)}`);
+        return;
+      }
+
+      setTransaction(resolved);
+      setIsLoading(false);
     };
 
-    void loadSession();
+    void loadTransaction();
     return () => {
       cancelled = true;
     };
-  }, [onNavigate]);
+  }, [onNavigate, profile.id, profile.isLoading]);
 
   return (
     <div className="pricing-page">
@@ -59,16 +79,16 @@ export function PricingCancelPage({ onNavigate }: PricingCancelPageProps) {
             Payment cancelled
           </span>
           <h1>Checkout did not complete.</h1>
-          <p>{isLoading ? 'Loading payment details...' : toStatusMessage(session)}</p>
+          <p>{isLoading ? 'Loading payment details...' : toStatusMessage(transaction)}</p>
 
           <div className="pricing-result-actions">
-            {session?.status === 'pending' ? (
+            {transaction?.status === 'pending' ? (
               <button
                 type="button"
                 className="pricing-top-button is-primary"
                 onClick={() =>
                   onNavigate(
-                    `/pricing/checkout?plan=${encodeURIComponent(session.plan_id)}&cycle=${session.billing_cycle}`,
+                    `/pricing/checkout?plan=${encodeURIComponent(transaction.planId)}&cycle=${transaction.billingCycle}`
                   )
                 }
               >
@@ -93,3 +113,4 @@ export function PricingCancelPage({ onNavigate }: PricingCancelPageProps) {
 }
 
 export default PricingCancelPage;
+

@@ -15,11 +15,17 @@ interface CheckoutPanelProps {
 }
 
 const formatAmount = (amount: number, currency: string): string => {
-  return new Intl.NumberFormat('th-TH', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
   }).format(amount);
+};
+
+const toBillingCycleLabel = (billingCycle: BillingCycle): string => {
+  if (billingCycle === 'yearly') return 'Yearly';
+  if (billingCycle === 'quarterly') return 'Quarterly';
+  return 'Monthly';
 };
 
 export function CheckoutPanel({
@@ -50,7 +56,7 @@ export function CheckoutPanel({
         </div>
         <div>
           <span>Billing</span>
-          <strong>{billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}</strong>
+          <strong>{toBillingCycleLabel(billingCycle)}</strong>
         </div>
         <div>
           <span>Amount</span>

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { ChevronDown, Sparkles, Zap } from 'lucide-react';
+import { ChevronDown, Bot } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import type { ChatModel } from '../../types/chat.types';
-export type { ChatModel };
+import { CHAT_MODELS } from '../../data/chatData';
 import './ModelDropdown.css';
+
+export type { ChatModel };
 
 interface ModelDropdownProps {
   currentModel: ChatModel;
@@ -11,20 +13,15 @@ interface ModelDropdownProps {
   direction?: 'up' | 'down';
 }
 
-const MODELS = [
-  { id: 'hanuman' as ChatModel, name: 'Hanuman-Ai', icon: <Sparkles size={14} /> },
-  { id: 'phraram' as ChatModel, name: 'Phraram-Ai', icon: <Zap size={14} /> },
-];
-
-export const ModelDropdown: React.FC<ModelDropdownProps> = ({
+export const ModelDropdown = React.memo(({
   currentModel,
   onModelChange,
   direction = 'up'
-}) => {
+}: ModelDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false));
 
-  const activeModel = MODELS.find(m => m.id === currentModel) || MODELS[0];
+  const activeModel = CHAT_MODELS.find(m => m.id === currentModel) || CHAT_MODELS[0];
 
   return (
     <div className={`model-dropdown-wrapper is-${direction}`} ref={dropdownRef}>
@@ -33,14 +30,16 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
-        <span className="model-icon">{activeModel.icon}</span>
+        <span className="model-icon ai-bot-wrapper">
+          <Bot size={14} className="ai-bot-icon" />
+        </span>
         <span className="model-name">{activeModel.name}</span>
         <ChevronDown size={14} className={`chevron ${isOpen ? 'rotated' : ''}`} />
       </button>
 
       {isOpen && (
         <div className="model-dropdown-menu">
-          {MODELS.map((model) => (
+          {CHAT_MODELS.map((model) => (
             <button
               key={model.id}
               className={`model-option ${currentModel === model.id ? 'active' : ''}`}
@@ -51,7 +50,9 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
               }}
               type="button"
             >
-              <span className="model-icon">{model.icon}</span>
+              <span className="model-icon ai-bot-wrapper">
+                <Bot size={14} className="ai-bot-icon" />
+              </span>
               <span className="model-name">{model.name}</span>
             </button>
           ))}
@@ -59,4 +60,6 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
       )}
     </div>
   );
-};
+});
+
+ModelDropdown.displayName = 'ModelDropdown';

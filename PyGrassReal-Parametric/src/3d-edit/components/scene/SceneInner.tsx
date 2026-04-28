@@ -84,6 +84,7 @@ export function SceneInner({
     const sceneObjectMap = useMemo(() => new Map(sceneObjects.map(o => [o.id, o])), [sceneObjects]);
     const orbitRef = useRef<any>(null);
     const [isGumballHovering, setIsGumballHovering] = useState(false);
+    const activeGumballPointerIdRef = useRef<number | null>(null);
 
     // 2. Specialized Logic Hooks
     const { build3DAiScopeBoxes, getBuild3DAiScopeRef, build3DAiScopeRefs } = useBuild3DAIScopes(nodes, connections);
@@ -148,6 +149,31 @@ export function SceneInner({
             if (orbitRef.current) orbitRef.current.enabled = cameraControlsEnabled;
         }
     }, [setIsGumballDragging, onInteractionStart, cameraControlsEnabled]);
+
+    const releaseGumballPointerCapture = useCallback(() => {
+        const pointerId = activeGumballPointerIdRef.current;
+        if (pointerId === null) return;
+        try {
+            if (gl.domElement.hasPointerCapture(pointerId)) {
+                gl.domElement.releasePointerCapture(pointerId);
+            }
+        } catch (err) {
+            // Ignore release failures when pointer is already gone.
+        }
+        activeGumballPointerIdRef.current = null;
+    }, [gl]);
+
+    useEffect(() => {
+        const handlePointerRelease = () => releaseGumballPointerCapture();
+        window.addEventListener('pointerup', handlePointerRelease, true);
+        window.addEventListener('pointercancel', handlePointerRelease, true);
+        window.addEventListener('blur', handlePointerRelease);
+        return () => {
+            window.removeEventListener('pointerup', handlePointerRelease, true);
+            window.removeEventListener('pointercancel', handlePointerRelease, true);
+            window.removeEventListener('blur', handlePointerRelease);
+        };
+    }, [releaseGumballPointerCapture]);
 
     const handleSelectionCalculated = useCallback((ids: Set<string>) => {
         setSelectedIds(ids);
@@ -243,7 +269,7 @@ export function SceneInner({
                     {selectionSource === 'model' && !isHandleDragging && !isScalingHandle && draggingAxis === null && (
                         <TransformControls
                             ref={transformControlsRef}
-                            userData={{ isSelectionHelper: true }}
+                            userData={{ isSelectionHelper: true, helperType: 'transform-controls-gumball' }}
                             object={ghostRef.current || undefined}
                             mode={isPictureLayerTransformActive ? pictureLayerTransformMode : 'translate'}
                             space={selectedIds.size === 1 ? "local" : "world"}
@@ -262,8 +288,13 @@ export function SceneInner({
                             onPointerDown={(e) => {
                                 // Stop both R3F and Native events immediately
                                 e.stopPropagation();
-                                if (e.nativeEvent) {
-                                    (e.nativeEvent as any).stopImmediatePropagation?.();
+                                const nativeEvent = e.nativeEvent as PointerEvent | undefined;
+                                nativeEvent?.stopImmediatePropagation();
+                                try {
+                                    gl.domElement.setPointerCapture(e.pointerId);
+                                    activeGumballPointerIdRef.current = e.pointerId;
+                                } catch (err) {
+                                    // Ignore capture failures.
                                 }
 
                                 isGizmoDraggingRef.current = true;
@@ -274,6 +305,7 @@ export function SceneInner({
                             }}
                             onMouseUp={() => {
                                 commitFinalTransform();
+                                releaseGumballPointerCapture();
                                 setIsGumballDragging(false);
                                 isGizmoDraggingRef.current = false;
                                 onInteractionEnd?.();

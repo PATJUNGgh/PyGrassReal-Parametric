@@ -4,7 +4,6 @@
   flex-direction: column;
   align-items: center;
   position: absolute;
-  /* เปลี่ยนมาใช้ absolute เพื่อให้ลอยตัวได้อิสระ */
   left: 0;
   right: 0;
   top: -5%;
@@ -21,8 +20,8 @@
 }
 
 .chat-empty-logo {
-  max-width: 600px;
-  /* เพิ่มขนาดโลโก้ให้ใหญ่ขึ้นตามต้องการ */
+  width: min(600px, 80vw);
+  /* ขยายได้สูงสุด 600px และย่อตามความกว้างหน้าจอไม่เกิน 80% */
   height: auto;
   object-fit: contain;
   transition: transform 0.3s ease;
@@ -37,25 +36,11 @@
 
 .chat-empty-title {
   font-size: 1.25rem;
-  /* ลดขนาดลงเพื่อให้ดูสวยงามและไม่เทอะทะ */
   font-weight: 600;
   color: var(--dash-text);
   margin: 0;
   margin-top: -100px;
-  /* ยกข้อความขึ้นไปชิดใต้โลโก้ตามลูกศรที่ชี้ครับ */
   letter-spacing: -0.01em;
   opacity: 0.9;
   text-align: center;
-}
-
-@media (max-width: 640px) {
-  .chat-empty-title {
-    font-size: 1.75rem;
-    text-align: center;
-    padding: 0 2rem;
-  }
-
-  .chat-empty-logo {
-    max-width: 240px;
-  }
 }

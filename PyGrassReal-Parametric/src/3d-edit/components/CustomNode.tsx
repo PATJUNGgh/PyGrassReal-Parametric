@@ -261,11 +261,11 @@ export const CustomNode = React.memo((props: CustomNodeProps) => {
 
                 {data.freeResizable && selected && (
                     <>
-                        <div onPointerDown={(e) => handleFreeResizeStart(e, 'e')} style={{ position: 'absolute', top: 0, right: -4, width: 10, height: '100%', cursor: 'ew-resize', zIndex: 110 }} />
-                        <div onPointerDown={(e) => handleFreeResizeStart(e, 'w')} style={{ position: 'absolute', top: 0, left: -4, width: 10, height: '100%', cursor: 'ew-resize', zIndex: 110 }} />
-                        <div onPointerDown={(e) => handleFreeResizeStart(e, 's')} style={{ position: 'absolute', bottom: -4, left: 0, width: '100%', height: 10, cursor: 'ns-resize', zIndex: 110 }} />
-                        <div onPointerDown={(e) => handleFreeResizeStart(e, 'se')} style={{ position: 'absolute', bottom: -5, right: -5, width: 15, height: 15, cursor: 'nwse-resize', zIndex: 111 }} />
-                        <div onPointerDown={(e) => handleFreeResizeStart(e, 'sw')} style={{ position: 'absolute', bottom: -5, left: -5, width: 15, height: 15, cursor: 'nesw-resize', zIndex: 111 }} />
+                        <div className="resize-handle" data-resize-handle="true" onPointerDown={(e) => handleFreeResizeStart(e, 'e')} style={{ position: 'absolute', top: 0, right: -4, width: 10, height: '100%', cursor: 'ew-resize', zIndex: 110 }} />
+                        <div className="resize-handle" data-resize-handle="true" onPointerDown={(e) => handleFreeResizeStart(e, 'w')} style={{ position: 'absolute', top: 0, left: -4, width: 10, height: '100%', cursor: 'ew-resize', zIndex: 110 }} />
+                        <div className="resize-handle" data-resize-handle="true" onPointerDown={(e) => handleFreeResizeStart(e, 's')} style={{ position: 'absolute', bottom: -4, left: 0, width: '100%', height: 10, cursor: 'ns-resize', zIndex: 110 }} />
+                        <div className="resize-handle" data-resize-handle="true" onPointerDown={(e) => handleFreeResizeStart(e, 'se')} style={{ position: 'absolute', bottom: -5, right: -5, width: 15, height: 15, cursor: 'nwse-resize', zIndex: 111 }} />
+                        <div className="resize-handle" data-resize-handle="true" onPointerDown={(e) => handleFreeResizeStart(e, 'sw')} style={{ position: 'absolute', bottom: -5, left: -5, width: 15, height: 15, cursor: 'nesw-resize', zIndex: 111 }} />
                     </>
                 )}
 

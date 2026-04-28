@@ -81,6 +81,8 @@ export function useSceneSync(props: SyncProps | SceneObject[]) {
     // 2. Sync targetRef based on selection
     useEffect(() => {
         if (!selectedIds || !sceneObjects || !targetRef || !selectionGroupRef || !build3DAiScopeRefs) return;
+        const isSelectionLocked = isHandleDragging || isGumballDragging || transformControlsRef?.current?.dragging || dragJustFinishedRef?.current;
+        if (isSelectionLocked) return;
 
         if (selectedIds.size === 0) {
             targetRef.current = null;
@@ -96,7 +98,7 @@ export function useSceneSync(props: SyncProps | SceneObject[]) {
         } else {
             targetRef.current = selectionGroupRef.current;
         }
-    }, [selectedIds, sceneObjects, selectionGroupRef, targetRef, build3DAiScopeRefs]);
+    }, [selectedIds, sceneObjects, selectionGroupRef, targetRef, build3DAiScopeRefs, isHandleDragging, isGumballDragging, transformControlsRef, dragJustFinishedRef?.current]);
 
     // 3. Sync Props to 3D Objects
     useEffect(() => {

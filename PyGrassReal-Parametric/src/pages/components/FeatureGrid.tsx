@@ -1,63 +1,64 @@
-import { Bot, LayoutDashboard, Network, Paintbrush, Shapes, SwatchBook } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-
-interface FeatureItem {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-}
-
-const FEATURES: FeatureItem[] = [
-  {
-    title: 'Node Workflow',
-    description: 'Construct 3D logic with connected, reusable node graphs.',
-    icon: Network,
-  },
-  {
-    title: 'Mesh Boolean',
-    description: 'Run union and difference operations directly in your visual flow.',
-    icon: Shapes,
-  },
-  {
-    title: 'AI Sculpt',
-    description: 'Generate volumetric shape variations from short text prompts.',
-    icon: Bot,
-  },
-  {
-    title: 'AI Paint',
-    description: 'Apply style-aware texture passes with guided material masks.',
-    icon: Paintbrush,
-  },
-  {
-    title: 'Material & Text',
-    description: 'Manage surface presets and editable text overlays from one place.',
-    icon: SwatchBook,
-  },
-  {
-    title: 'Workflow Dashboard',
-    description: 'Track iterations, sort assets, and jump back into active projects.',
-    icon: LayoutDashboard,
-  },
-];
+import { useMemo } from 'react';
+import { localizeText, useLanguage } from '../../i18n/language';
+import { useFeatureItems } from '../hooks/usePageData';
+import { Section } from './Section';
 
 export function FeatureGrid() {
+  const { language } = useLanguage();
+  const { data: features, isLoading } = useFeatureItems();
+
+  const localizedFeatures = useMemo(
+    () =>
+      features.map((feature) => ({
+        ...feature,
+        title: localizeText(language, feature.title),
+        description: localizeText(language, feature.description),
+      })),
+    [features, language]
+  );
+
   return (
-    <section className="pg-section pg-fade-up pg-delay-1">
-      <div className="pg-section-heading">
-        <h2>Features</h2>
-        <p>Focused tools for concept modeling and production-ready graph workflows.</p>
-      </div>
+    <Section
+      telemetryId="landing.features"
+      delay={1}
+      title={localizeText(language, {
+        th: 'ฟีเจอร์',
+        en: 'Features',
+      })}
+      description={localizeText(language, {
+        th: 'เครื่องมือที่ออกแบบมาเพื่องานคอนเซ็ปต์และเวิร์กโฟลว์กราฟระดับโปรดักชัน',
+        en: 'Focused tools for concept modeling and production-ready graph workflows.',
+      })}
+    >
       <div className="pg-feature-grid">
-        {FEATURES.map((feature) => (
-          <article key={feature.title} className="pg-feature-card">
-            <span className="pg-feature-icon" aria-hidden="true">
-              <feature.icon size={18} />
-            </span>
-            <h3>{feature.title}</h3>
-            <p>{feature.description}</p>
-          </article>
-        ))}
+        {isLoading && localizedFeatures.length === 0
+          ? Array.from({ length: 3 }, (_, index) => (
+              <article key={`feature-loading-${index}`} className="pg-feature-card is-loading" aria-hidden="true">
+                <span className="pg-feature-icon" aria-hidden="true" />
+                <h3>
+                  {localizeText(language, {
+                    th: 'กำลังโหลดฟีเจอร์...',
+                    en: 'Loading features...',
+                  })}
+                </h3>
+                <p>
+                  {localizeText(language, {
+                    th: 'กำลังเตรียมข้อมูลฟีเจอร์',
+                    en: 'Preparing feature data.',
+                  })}
+                </p>
+              </article>
+            ))
+          : localizedFeatures.map((feature, index) => (
+              <article key={`${feature.title}-${index}`} className="pg-feature-card">
+                <span className="pg-feature-icon" aria-hidden="true">
+                  <feature.icon size={18} />
+                </span>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </article>
+            ))}
       </div>
-    </section>
+    </Section>
   );
 }

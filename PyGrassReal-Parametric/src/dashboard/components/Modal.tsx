@@ -9,14 +9,14 @@ interface ModalProps {
   footer?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) {
+export const Modal = React.memo(({ isOpen, onClose, title, children, footer }: ModalProps) => {
   const modalRef = useClickOutside<HTMLDivElement>(onClose);
 
   if (!isOpen) return null;
 
   return (
     <div className="dashboard-modal-overlay" role="presentation">
-      <div className="dashboard-modal" ref={modalRef}>
+      <div className="dashboard-modal" ref={modalRef} role="dialog" aria-modal="true">
         <h2>{title}</h2>
         <div className="dashboard-modal-content">
           {children}
@@ -25,4 +25,8 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
       </div>
     </div>
   );
-}
+});
+
+Modal.displayName = 'Modal';
+
+export default Modal;

@@ -24,10 +24,51 @@ dist-ssr
 *.sw?
 
 # Local notes / tools
+.claude/
 .continue/
+.kilo/
+.tmp/
+.tmp-*.js
+__pycache__/
+*.py[cod]
+debug_hanuman.mjs
+scratch_original.txt
+n8n-EngineAi/
+CAD_Workspace/
+Cloudflare-API-AI/
+scripts/
+l01_chunks/
+l02_chunks/
+upload_l01_rest.py
+upload_l02_rest.py
+supabase/
 plan.md
+plan_new.md
 plan2.md
 GEMINI.md
+/Create_Stripe.md
+/Prompt_Test.md
+/Supabase_Project.md
+/System Message-Ai.md
+
+# Local tool configs / generated test outputs
+/openclaw.json
+/last_chat.json
+/billing_test_res.json
+/final_test_result.json
+
+# One-off local migration / repair scripts
+/extract.cjs
+/inject.cjs
+/restore.cjs
+/restore_full.cjs
+/fix_enc.js
+/fix_l02_1000q.py
+/fix_md_tables.py
+/gen_l01_sql.py
+/gen_l02_sql.py
+/insert_100q.py
+/split_sql.py
 
 # Environment files
 .env

@@ -19,6 +19,7 @@ export interface Workflow {
   created_at: string | null;
   updated_at: string | null;
   definition: WorkflowDefinition | null;
+  bunny_base_url: string | null;
 }
 
 export interface WorkflowQueryParams {
@@ -29,6 +30,7 @@ export interface WorkflowQueryParams {
   sortBy: WorkflowSort;
   ownerFilter: WorkflowOwnerFilter;
   ownerId: string | null;
+  signal?: AbortSignal;
 }
 
 export interface WorkflowListResult {

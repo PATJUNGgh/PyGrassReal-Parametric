@@ -5,7 +5,7 @@ interface ToastStackProps {
   toasts: ToastItem[];
 }
 
-export const ToastStack: React.FC<ToastStackProps> = ({ toasts }) => {
+export const ToastStack = React.memo(({ toasts }: ToastStackProps) => {
   if (toasts.length === 0) return null;
 
   return (
@@ -20,4 +20,6 @@ export const ToastStack: React.FC<ToastStackProps> = ({ toasts }) => {
       ))}
     </div>
   );
-};
+});
+
+ToastStack.displayName = 'ToastStack';

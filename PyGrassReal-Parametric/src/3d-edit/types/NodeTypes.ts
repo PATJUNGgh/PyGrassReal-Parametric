@@ -123,7 +123,7 @@ export interface PictureData {
 
 export interface NodeData {
     id: string;
-    type: 'box' | 'sphere' | 'cone' | 'cylinder' | 'unit-x' | 'unit-y' | 'unit-z' | 'vector-xyz' | 'transform' | 'build-3d-ai' | 'vertex-mask' | 'mesh-union' | 'mesh-difference' | 'mesh-intersection' | 'model-material' | 'text-on-mesh' | 'mesh-array' | 'mesh-eval' | 'face-normals' | 'custom' | 'antivirus' | 'input' | 'output' | 'number-slider' | 'boolean-toggle' | 'series' | 'group' | 'component' | 'panel' | 'widget-window' | 'ai-assistant' | 'prompt' | 'layer-source' | 'layer-view' | 'layer-bridge' | 'node-prompt' | 'background-color' | 'viewport' | 'ai-sculpt' | 'ai-paint' | 'picture-on-mesh';
+    type: 'box' | 'sphere' | 'cone' | 'cylinder' | 'unit-x' | 'unit-y' | 'unit-z' | 'vector-xyz' | 'transform' | 'build-3d-ai' | 'ai-agent' | 'vertex-mask' | 'mesh-union' | 'mesh-difference' | 'mesh-intersection' | 'model-material' | 'text-on-mesh' | 'mesh-array' | 'mesh-eval' | 'face-normals' | 'custom' | 'antivirus' | 'input' | 'output' | 'number-slider' | 'boolean-toggle' | 'series' | 'group' | 'component' | 'panel' | 'widget-window' | 'ai-assistant' | 'prompt' | 'layer-source' | 'layer-view' | 'layer-bridge' | 'node-prompt' | 'background-color' | 'viewport' | 'ai-sculpt' | 'ai-paint' | 'picture-on-mesh';
     position: { x: number; y: number };
     data: {
         version?: number;
@@ -236,6 +236,11 @@ export interface NodeData {
         backgroundGradientAngle?: number;
         backgroundUpdatedAt?: number;
         editorOrigin?: 'nodes' | 'widget';
+        autoCreateSource?: {
+            nodeId: string;
+            portId: string;
+            ruleId: string;
+        };
         viewportMode?: 'wireframe' | 'depth' | 'monochrome' | 'rendered';
         viewportUpdatedAt?: number;
         sceneObjectId?: string;
@@ -257,6 +262,10 @@ export interface NodeData {
         pictureResult?: unknown;
         pictureTransformPatch?: Partial<PicturePlacement>;
         pictureTransformToken?: number;
+        // AI Agent specific
+        agentType?: 'phraram' | 'hanuman' | 'phralak' | 'phipek';
+        portMode?: 'input' | 'output';
+        isNewAiAgent?: boolean;
         // Text On Mesh specific
         text?: string;
         font?: string;

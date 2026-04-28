@@ -1,0 +1,186 @@
+/* ── Profile Menu Toggle ─── */
+.pg-profile-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pg-profile-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius-pill);
+  background: var(--pg-surface-overlay);
+  color: var(--pg-text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 40px;
+}
+
+.pg-profile-toggle:hover {
+  border-color: var(--pg-border-strong);
+  background: var(--pg-surface-overlay-strong, var(--pg-surface-overlay));
+}
+
+.pg-profile-toggle:focus-visible {
+  outline: 2px solid var(--pg-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── Avatar ─── */
+.pg-profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pg-profile-avatar--initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--pg-neon, #00e5ff) 0%, var(--pg-accent, #6c63ff) 100%);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ── Display Name (hidden on mobile) ─── */
+.pg-profile-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Chevron ─── */
+.pg-profile-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.pg-profile-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown Panel ─── */
+.pg-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--pg-surface-overlay-strong, hsl(220 20% 14%));
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 6px 0;
+  z-index: 100;
+  animation: pg-profile-dropdown-in 0.15s ease-out;
+}
+
+@keyframes pg-profile-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Dropdown Header ─── */
+.pg-profile-dropdown-header {
+  padding: 10px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pg-profile-dropdown-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--pg-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-profile-dropdown-email {
+  font-size: 0.75rem;
+  color: var(--pg-text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Divider ─── */
+.pg-profile-dropdown-divider {
+  height: 1px;
+  background: var(--pg-border);
+  margin: 4px 0;
+}
+
+/* ── Dropdown Item ─── */
+.pg-profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  background: transparent;
+  color: var(--pg-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-align: left;
+}
+
+.pg-profile-dropdown-item:hover {
+  background: var(--pg-surface-hover, hsla(220, 20%, 25%, 0.5));
+}
+
+.pg-profile-dropdown-item:focus-visible {
+  outline: 2px solid var(--pg-focus-ring);
+  outline-offset: -2px;
+}
+
+.pg-profile-dropdown-item--danger {
+  color: hsl(0, 72%, 65%);
+}
+
+.pg-profile-dropdown-item--danger:hover {
+  background: hsla(0, 72%, 50%, 0.12);
+  color: hsl(0, 80%, 62%);
+}
+
+/* ── Responsive ─── */
+@media (max-width: 860px) {
+  .pg-profile-name {
+    display: none;
+  }
+
+  .pg-profile-toggle {
+    padding: 4px 8px 4px 4px;
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .pg-profile-toggle {
+    min-height: 34px;
+  }
+
+  .pg-profile-avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
